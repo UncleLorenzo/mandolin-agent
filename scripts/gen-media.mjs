@@ -90,6 +90,26 @@ ${texts.join("\n")}
 </svg>
 `;
 
+// ---- banner.svg : the README hero wordmark ----
+const BW = 1200, BH = 300, cx = BW / 2;
+const banner = `<svg xmlns="http://www.w3.org/2000/svg" width="${BW}" height="${BH}" viewBox="0 0 ${BW} ${BH}" role="img" aria-label="Mandolin — the agent that learns you">
+<defs>
+<linearGradient id="wm" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${C.teal}"/><stop offset="0.5" stop-color="${C.cream}"/><stop offset="1" stop-color="${C.orange}"/></linearGradient>
+<linearGradient id="rule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${C.teal}" stop-opacity="0"/><stop offset="0.5" stop-color="${C.cream}"/><stop offset="1" stop-color="${C.orange}" stop-opacity="0"/></linearGradient>
+<radialGradient id="glowL" cx="0.3" cy="0.5" r="0.65"><stop offset="0" stop-color="${C.teal}" stop-opacity="0.18"/><stop offset="1" stop-color="${C.teal}" stop-opacity="0"/></radialGradient>
+<radialGradient id="glowR" cx="0.72" cy="0.5" r="0.65"><stop offset="0" stop-color="${C.orange}" stop-opacity="0.15"/><stop offset="1" stop-color="${C.orange}" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="${BW}" height="${BH}" rx="22" fill="#070a0e"/>
+<rect width="${BW}" height="${BH}" rx="22" fill="url(#glowL)"/>
+<rect width="${BW}" height="${BH}" rx="22" fill="url(#glowR)"/>
+<rect x="0.75" y="0.75" width="${BW - 1.5}" height="${BH - 1.5}" rx="22" fill="none" stroke="#141b26"/>
+<text x="${cx}" y="162" text-anchor="middle" fill="url(#wm)" font-family="'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif" font-size="110" font-weight="700" letter-spacing="-1">Mandol<tspan font-style="italic">i</tspan>n</text>
+<rect x="${cx - 160}" y="188" width="320" height="2" fill="url(#rule)"/>
+<text x="${cx}" y="226" text-anchor="middle" fill="#9aa0a8" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="17" letter-spacing="7">THE AGENT THAT LEARNS YOU</text>
+</svg>
+`;
+
 mkdirSync(join(root, "media"), { recursive: true });
 writeFileSync(join(root, "media", "demo.svg"), svg, "utf8");
-console.log(`wrote media/demo.svg (${svg.length} bytes, ${H}px tall, ${k} animated lines)`);
+writeFileSync(join(root, "media", "banner.svg"), banner, "utf8");
+console.log(`wrote media/demo.svg (${svg.length} bytes) and media/banner.svg (${banner.length} bytes)`);

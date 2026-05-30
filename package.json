@@ -9,7 +9,8 @@
   "scripts": {
     "mando": "node src/cli.ts",
     "demo": "node src/cli.ts demo",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/core.test.ts"
   },
   "engines": {
     "node": ">=22.6"

@@ -1,6 +1,6 @@
 <div align="center">
 
-# Mandolin
+<img src="media/banner.svg" alt="Mandolin — the agent that learns you" width="820">
 
 **The agent that learns *you*.**
 

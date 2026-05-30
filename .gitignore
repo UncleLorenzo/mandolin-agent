@@ -12,3 +12,7 @@ package-lock.json
 
 # launch kit — private marketing copy, never published
 LAUNCH.md
+
+# CI workflow is ready on disk but pushing it needs a token with the `workflow` scope.
+# Enable later: gh auth refresh -h github.com -s workflow  (then delete these 3 lines + git add .github && commit && push)
+.github/workflows/
