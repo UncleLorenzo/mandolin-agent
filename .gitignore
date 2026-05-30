@@ -5,3 +5,7 @@ dist/
 .DS_Store
 *.log
 .demo-home/
+.smoke/
+
+# zero runtime deps — the lockfile only pins dev typecheck tooling, resolved fresh on install
+package-lock.json

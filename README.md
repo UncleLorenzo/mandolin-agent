@@ -37,7 +37,7 @@ believes got there without your consent, and you can read every line of it.
 ## See it in 20 seconds — no API key needed
 
 ```bash
-git clone https://github.com/<your-org>/mandolin-agent
+git clone https://github.com/UncleLorenzo/mandolin-agent
 cd mandolin-agent
 node src/cli.ts demo
 ```
