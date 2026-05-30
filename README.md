@@ -1,0 +1,184 @@
+<div align="center">
+
+# Mandolin
+
+**The agent that learns *you*.**
+
+Most agents learn tasks. Mandolin learns your voice, your standards, your taste —
+and earns every instinct before it acts on it.
+
+`self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
+
+</div>
+
+---
+
+## The idea
+
+The open-source agent wave proved something: memory should be a **file you can read**,
+and an agent should get **better the longer it runs**. Good. We took those ideas somewhere
+they hadn't gone.
+
+Every other agent compounds *skills* — recipes for tasks. Mandolin compounds a **Signature**:
+a living, human-readable model of *who you are*. Your cadence. The words you'd never use. The
+bar a thing has to clear before it ships. Who you're building for. It loads that before every
+move, so it doesn't start generic and drift toward you — **it starts as you.** One builder,
+run like a studio.
+
+And it never trusts itself by default. When it learns a new way of working, that becomes a
+**proposed** instinct — visible, inspectable, inert — until *you* promote it. Your sign-off is
+the signature; a content digest makes a trusted instinct tamper-evident. Nothing your agent
+believes got there without your consent, and you can read every line of it.
+
+> Inspectable file-based learning, plus a trust model. That's the whole pitch.
+
+---
+
+## See it in 20 seconds — no API key needed
+
+```bash
+git clone https://github.com/<your-org>/mandolin-agent
+cd mandolin-agent
+node src/cli.ts demo
+```
+
+```
+   Mandolin · first rehearsal              offline — no model key needed
+   ──────────────────────────────────────────────────────
+
+   mandolin  How should I sound when I write as you?
+   you       Discreet and elite. Lowercase confidence. Suggest, never explain.
+
+   mandolin  What does 'good' have to clear before it ships?
+   you       If it could've come from anyone, it's not done. Taste over volume.
+
+   reflecting — distilling this into who you are
+
+   ╭──────────────────────────────────────────────────────────╮
+   │ Signature  ~/.mandolin/signature.md                        │
+   │ Voice      + Discreet and elite. Lowercase confidence…     │
+   │ Standards  + If it could've come from anyone, it's not…    │
+   ╰──────────────────────────────────────────────────────────╯
+
+   · PROPOSED   awaiting your promotion
+     Hold the signature — a reusable instinct, distilled from this session
+
+   nothing is trusted until you sign off:
+   mando promote hold-the-signature
+```
+
+It wrote real files. Go read them: `~/.mandolin/signature.md`. That diff is the loop you'd
+otherwise wait days to watch — compressed into one rehearsal.
+
+---
+
+## Quickstart (live)
+
+```bash
+export ANTHROPIC_API_KEY=sk-...      # or any model — see "Model-agnostic" below
+node src/cli.ts init                 # establish your Signature + local home
+node src/cli.ts chat                 # put it to work; it operates from your Signature
+```
+
+> v0.1 runs straight off the source on **Node ≥ 22.6** (native TypeScript, no build step).
+> `npm link` to get the `mando` command globally.
+
+---
+
+## How it works
+
+**The Signature** — `~/.mandolin/signature.md`
+A Markdown file with four sections: Voice, Standards, Audience, Context. Loaded into context
+before every turn, refined after every session. Each learned line is stamped with the session
+it came from, so you can always trace *why* the agent believes what it believes.
+
+**Memory** — `~/.mandolin/memory/`
+Plain-text session logs and a short, curated facts file. No vector database, no opaque
+embeddings. If you can't read what your agent remembers, you don't own it. Recall is keyword
+search over files you can `grep` yourself.
+
+**Instincts + the trust gate** — `~/.mandolin/skills/`
+Distilled, reusable procedures in the `agentskills.io`-compatible `SKILL.md` format (so an
+instinct you teach Mandolin still reads in Claude Code, Cursor, or Codex). New ones land in
+`proposed/`. They do nothing until you `mando promote` them into `trusted/`. Promotion records
+a digest and writes a line to `ledger.md` — your audit trail of what you trusted, and when.
+
+**The loop**
+```
+   perceive → act → reflect → propose → (you) promote
+       ↑___________________ Signature ___________________↓
+```
+After each session, Mandolin reflects: it sharpens your Signature *and* drafts an instinct.
+The Signature update is automatic — it's just learning who you are. The instinct waits for you.
+
+---
+
+## The command surface
+
+Deliberately small. Depth over breadth.
+
+| command | what it does |
+|---|---|
+| `mando` | the lay of the land |
+| `mando init` | establish your Signature + local home |
+| `mando demo` | watch the loop turn — offline, 20 seconds |
+| `mando chat [msg]` | put the agent to work |
+| `mando signature` | read the compounding model of you |
+| `mando skills` | trusted instincts + what's proposed |
+| `mando promote <name>` | sign off — make a proposed instinct trusted |
+| `mando reflect` | distill the latest session by hand |
+| `mando model [name]` | swap the model / provider |
+| `mando status` | where things stand |
+| `mando ledger` | the audit trail of what you trusted |
+
+---
+
+## Model-agnostic
+
+Default is Claude. Swap with one line — no code changes, no lock-in.
+
+```bash
+mando model claude-opus-4-8        # a different Claude
+mando model openai gpt-...         # any OpenAI-compatible endpoint
+mando model ollama llama3.3        # fully local, no key, nothing leaves the machine
+```
+
+---
+
+## Everything is yours
+
+- **Self-hosted.** It lives in `~/.mandolin`. No account, no cloud, no telemetry.
+- **Inspectable.** Signature, memory, instincts, ledger — all plain text. `cat` it, `grep` it,
+  `git` it, delete it.
+- **Portable.** Commit `~/.mandolin` to a private repo and your agent's whole self moves with you.
+- **Lean.** Zero runtime dependencies. The model API is just HTTPS; we call it with `fetch`.
+
+---
+
+## Status
+
+v0.1, honest about itself:
+
+- **Live:** the Signature, file-based memory, the proposed→trusted instinct gate with digests +
+  ledger, the reflection loop (LLM-driven with a key; deterministic offline), model-agnostic
+  providers (Anthropic / OpenAI-compatible / Ollama), and the offline `demo`.
+- **Next:** sandboxed tool execution (fs/shell/web behind capability grants), the always-on
+  gateway for messaging channels, semantic recall alongside keyword search, and a published
+  `npm`/`npx mando` build.
+
+---
+
+## Prior art
+
+Mandolin stands on ideas the open-source community made normal: agents whose memory is a file
+you can read, and that distill their own experience into reusable skills. We're grateful for
+that wave — and we pointed it somewhere new: at *taste*, and at *trust*. This is original code,
+not a fork.
+
+## License
+
+MIT. Build on it, ship it, make it yours.
+
+<div align="center">
+<sub>made by <a href="https://gomandolin.com">Mandolin</a> · the smallest cut, the largest upside</sub>
+</div>

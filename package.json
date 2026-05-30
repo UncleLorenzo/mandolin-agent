@@ -1,0 +1,33 @@
+{
+  "name": "mandolin-agent",
+  "version": "0.1.0",
+  "description": "An agent that learns you. Self-hosted, model-agnostic, and it earns every instinct before it acts.",
+  "type": "module",
+  "bin": {
+    "mando": "./src/cli.ts"
+  },
+  "scripts": {
+    "mando": "node src/cli.ts",
+    "demo": "node src/cli.ts demo",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "self-hosted",
+    "personal-agent",
+    "claude",
+    "mandolin",
+    "open-source"
+  ],
+  "license": "MIT",
+  "author": "Mandolin",
+  "homepage": "https://gomandolin.com",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
