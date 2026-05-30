@@ -9,6 +9,10 @@ and earns every instinct before it acts on it.
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
+<br>
+
+<img src="media/demo.svg" alt="Mandolin's trust gate: it runs the harmless command, and refuses to delete a directory" width="760">
+
 </div>
 
 ---

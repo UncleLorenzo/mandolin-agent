@@ -9,3 +9,6 @@ dist/
 
 # zero runtime deps — the lockfile only pins dev typecheck tooling, resolved fresh on install
 package-lock.json
+
+# launch kit — private marketing copy, never published
+LAUNCH.md
