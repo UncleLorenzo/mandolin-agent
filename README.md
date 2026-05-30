@@ -111,6 +111,14 @@ a digest and writes a line to `ledger.md` — your audit trail of what you trust
 After each session, Mandolin reflects: it sharpens your Signature *and* drafts an instinct.
 The Signature update is automatic — it's just learning who you are. The instinct waits for you.
 
+**Acting, through a gate** — `mando act "<task>"`
+The same trust model, applied to actions. Mandolin can read files, list directories, write files,
+run shell commands, and fetch URLs — but **reading inside your project is the only thing it does
+freely.** Writing, running, and network access are denied by default; each one either needs a
+standing grant (`mando grant exec`) or your in-the-moment yes. Every action it takes — and every
+one you stop — is written to `actions.md`. Run `mando act` with no model key to watch the gate
+work offline: it really runs the harmless command, and really refuses the destructive one.
+
 ---
 
 ## The command surface
@@ -122,10 +130,12 @@ Deliberately small. Depth over breadth.
 | `mando` | the lay of the land |
 | `mando init` | establish your Signature + local home |
 | `mando demo` | watch the loop turn — offline, 20 seconds |
-| `mando chat [msg]` | put the agent to work |
+| `mando act <task>` | put it to work with tools, through the gate |
+| `mando chat [msg]` | talk to it — operates from your Signature |
 | `mando signature` | read the compounding model of you |
 | `mando skills` | trusted instincts + what's proposed |
 | `mando promote <name>` | sign off — make a proposed instinct trusted |
+| `mando grant <cap>` | let it act unprompted (write/exec/network) |
 | `mando reflect` | distill the latest session by hand |
 | `mando model [name]` | swap the model / provider |
 | `mando status` | where things stand |
@@ -160,11 +170,13 @@ mando model ollama llama3.3        # fully local, no key, nothing leaves the mac
 v0.1, honest about itself:
 
 - **Live:** the Signature, file-based memory, the proposed→trusted instinct gate with digests +
-  ledger, the reflection loop (LLM-driven with a key; deterministic offline), model-agnostic
-  providers (Anthropic / OpenAI-compatible / Ollama), and the offline `demo`.
-- **Next:** sandboxed tool execution (fs/shell/web behind capability grants), the always-on
-  gateway for messaging channels, semantic recall alongside keyword search, and a published
-  `npm`/`npx mando` build.
+  ledger, the reflection loop (LLM-driven with a key; deterministic offline), **gated tool
+  execution** (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a
+  real agentic loop, model-agnostic providers (Anthropic / OpenAI-compatible / Ollama), and the
+  offline `demo` and `act` rehearsals.
+- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), semantic
+  recall alongside keyword search, per-tool path scoping for writes, and a published
+  `npm` / `npx mando` build.
 
 ---
 

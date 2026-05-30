@@ -6,8 +6,10 @@ import { hero } from "./commands/hero.ts";
 import { init } from "./commands/init.ts";
 import { demo } from "./commands/demo.ts";
 import { chat } from "./commands/chat.ts";
+import { act } from "./commands/act.ts";
 import { showSignature, showSkills, showStatus, showLedger } from "./commands/inspect.ts";
 import { promoteCmd } from "./commands/promote.ts";
+import { grant, revoke } from "./commands/grant.ts";
 import { modelCmd } from "./commands/model.ts";
 import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette } from "./brand.ts";
 import { readSignature } from "./core/signature.ts";
@@ -29,8 +31,11 @@ switch (cmd) {
     demo();
     break;
   case "chat":
-  case "run":
     await chat(rest);
+    break;
+  case "act":
+  case "run":
+    await act(rest);
     break;
   case "signature":
   case "sig":
@@ -42,6 +47,12 @@ switch (cmd) {
     break;
   case "promote":
     promoteCmd(rest[0]);
+    break;
+  case "grant":
+    grant(rest[0]);
+    break;
+  case "revoke":
+    revoke(rest[0]);
     break;
   case "reflect":
     await reflectLatest();
@@ -90,10 +101,12 @@ function help(): void {
   const rows: [string, string][] = [
     ["init", "establish your Signature + local home"],
     ["demo", "watch the loop turn — offline, 20 seconds"],
-    ["chat [msg]", "put the agent to work (needs a model key)"],
+    ["act <task>", "put it to work with tools, through the gate"],
+    ["chat [msg]", "talk to it — operates from your Signature"],
     ["signature", "read the compounding model of you"],
     ["skills", "trusted instincts + what's proposed"],
     ["promote <name>", "sign off — make a proposed instinct trusted"],
+    ["grant <cap>", "let it act unprompted (write/exec/network)"],
     ["reflect", "distill the latest session by hand"],
     ["model [name]", "swap the model / provider"],
     ["status", "where things stand"],

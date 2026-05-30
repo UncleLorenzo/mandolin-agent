@@ -4,8 +4,10 @@
 // facts into context before it answers. It doesn't start as a generic
 // assistant and drift toward you — it starts as you.
 
-import type { Message } from "./provider.ts";
-import { complete } from "./provider.ts";
+import type { Message, RawMessage, ContentBlock } from "./provider.ts";
+import { complete, completeRaw } from "./provider.ts";
+import { toolSchemas, executeTool, findTool } from "./tools.ts";
+import type { Approver, ToolCall } from "./tools.ts";
 import { readSignature } from "./signature.ts";
 import { readFacts } from "./memory.ts";
 import { list, verify } from "./skills.ts";
@@ -37,7 +39,47 @@ export function buildSystem(): string {
   ].join("\n");
 }
 
-/** One turn of the live agent. */
+/** One turn of the live agent (no tools — plain conversation). */
 export async function respond(history: Message[]): Promise<string> {
   return complete(buildSystem(), history, 1024);
+}
+
+export type AgentEvent =
+  | { kind: "think"; text: string }
+  | { kind: "tool"; call: ToolCall; risk: string }
+  | { kind: "result"; tool: string; ok: boolean; decision: string };
+
+const MAX_STEPS = 8;
+
+/**
+ * The agentic loop: operate as the Signature, act through gated tools, until the
+ * task is done. Every action routes through `approver` + the trust gate.
+ */
+export async function runAgent(task: string, approver: Approver, onEvent?: (e: AgentEvent) => void): Promise<string> {
+  const system =
+    buildSystem() +
+    "\n\n# Acting\nYou can act through tools. Reading inside the project is free; writing files, running commands, and " +
+    "network access need the user's standing grant or in-the-moment approval. Take the smallest action that moves the " +
+    "task forward. When you're finished, reply with a short summary and no tool call.";
+
+  const messages: RawMessage[] = [{ role: "user", content: task }];
+
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const turn = await completeRaw(system, messages, toolSchemas(), 2048);
+    if (turn.text) onEvent?.({ kind: "think", text: turn.text });
+    messages.push({ role: "assistant", content: turn.content });
+
+    if (turn.toolUses.length === 0) return turn.text || "(done)";
+
+    const results: ContentBlock[] = [];
+    for (const tu of turn.toolUses) {
+      const call: ToolCall = { tool: tu.name, input: tu.input };
+      onEvent?.({ kind: "tool", call, risk: findTool(tu.name)?.risk ?? "read" });
+      const outcome = await executeTool(call, approver);
+      onEvent?.({ kind: "result", tool: tu.name, ok: outcome.ok, decision: outcome.decision });
+      results.push({ type: "tool_result", tool_use_id: tu.id, content: outcome.output, is_error: !outcome.ok });
+    }
+    messages.push({ role: "user", content: results });
+  }
+  return "(stopped: reached the step limit without finishing)";
 }

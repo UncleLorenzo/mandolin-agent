@@ -21,6 +21,7 @@ export const paths = {
   proposed: () => join(home(), "skills", "proposed"),
   trusted: () => join(home(), "skills", "trusted"),
   ledger: () => join(home(), "ledger.md"),
+  actions: () => join(home(), "actions.md"),
 };
 
 /** Make sure the whole tree exists. Idempotent. */

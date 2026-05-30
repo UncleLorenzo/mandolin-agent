@@ -26,8 +26,8 @@
   "license": "MIT",
   "author": "Mandolin",
   "homepage": "https://gomandolin.com",
-  "dependencies": {},
   "devDependencies": {
+    "@types/node": "^22.19.19",
     "typescript": "^5.7.0"
   }
 }

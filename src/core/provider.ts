@@ -6,13 +6,17 @@ import { paths } from "../home.ts";
 
 export type Provider = "anthropic" | "ollama" | "openai";
 
+/** Classes of action the agent can be trusted with. Off by default. */
+export type Capability = "write" | "exec" | "network";
+
 export type Config = {
   provider: Provider;
   model: string;
   baseUrl?: string;
+  capabilities?: Partial<Record<Capability, boolean>>;
 };
 
-const DEFAULT: Config = { provider: "anthropic", model: "claude-sonnet-4-6" };
+const DEFAULT: Config = { provider: "anthropic", model: "claude-sonnet-4-6", capabilities: {} };
 
 export function getConfig(): Config {
   const p = paths.config();
@@ -30,6 +34,16 @@ export function setConfig(patch: Partial<Config>): Config {
   const next = { ...getConfig(), ...patch };
   writeFileSync(paths.config(), JSON.stringify(next, null, 2) + "\n", "utf8");
   return next;
+}
+
+/** Has the user pre-granted this class of action? */
+export function isGranted(cap: Capability): boolean {
+  return Boolean(getConfig().capabilities?.[cap]);
+}
+
+export function setCapability(cap: Capability, on: boolean): Config {
+  const cfg = getConfig();
+  return setConfig({ capabilities: { ...cfg.capabilities, [cap]: on } });
 }
 
 /** Resolve the API key for the active provider, if any. */
@@ -58,6 +72,44 @@ export async function complete(system: string, messages: Message[], maxTokens = 
   if (cfg.provider === "openai") return openaiCompatible(cfg, system, messages, maxTokens);
   if (cfg.provider === "ollama") return ollama(cfg, system, messages, maxTokens);
   throw new Error(`Unknown provider: ${cfg.provider}`);
+}
+
+export type ContentBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
+
+export type RawMessage = { role: "user" | "assistant"; content: string | ContentBlock[] };
+export type ToolSchema = { name: string; description: string; input_schema: Record<string, unknown> };
+export type RawTurn = {
+  text: string;
+  toolUses: { id: string; name: string; input: Record<string, unknown> }[];
+  stop: string;
+  content: ContentBlock[];
+};
+
+/** A single model turn that may request tools. Anthropic-only for now. */
+export async function completeRaw(system: string, messages: RawMessage[], tools: ToolSchema[], maxTokens = 2048): Promise<RawTurn> {
+  const cfg = getConfig();
+  if (cfg.provider !== "anthropic") throw new Error(`the tool-use loop currently supports anthropic only (configured: ${cfg.provider})`);
+  const key = apiKey("anthropic");
+  if (!key) throw new Error("offline");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, tools, messages }),
+  });
+  if (!res.ok) throw new Error(`anthropic ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as { content: ContentBlock[]; stop_reason: string };
+  const content = data.content ?? [];
+  const text = content
+    .filter((b): b is { type: "text"; text: string } => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  const toolUses = content
+    .filter((b): b is { type: "tool_use"; id: string; name: string; input: Record<string, unknown> } => b.type === "tool_use")
+    .map((b) => ({ id: b.id, name: b.name, input: b.input }));
+  return { text, toolUses, stop: data.stop_reason, content };
 }
 
 async function anthropic(cfg: Config, system: string, messages: Message[], maxTokens: number): Promise<string> {
