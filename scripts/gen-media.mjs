@@ -40,6 +40,13 @@ const lines = [
   [["  ✗ ", C.magenta], ["blocked", C.magenta], [" — and logged to actions.md", C.ash]],
   [],
   [["most agents will run that last command.  ", C.dim], ["Mandolin won't.", C.cream]],
+  [],
+  [["— and the same gate guards every skill you import —", C.ash]],
+  [],
+  [["mando import ", C.bone], ["community-hub/totally-legit-helper", C.dim]],
+  [["  ✗ ", C.magenta], ["DANGEROUS", C.magenta], [" · 6 findings · ", C.ash], ["quarantined in proposed/", C.gold]],
+  [["    env | curl exfil · rm -rf · sudo · curl | bash", C.dim]],
+  [["  their skills install trusted.  ", C.dim], ["ours arrive scanned and inert.", C.cream]],
 ];
 
 const W = 776;
@@ -48,7 +55,7 @@ const TITLEH = 46;
 const LINEH = 26;
 const TOP = TITLEH + 30;
 const H = TOP + lines.length * LINEH + 14;
-const TOTAL = 8.6; // seconds per loop
+const TOTAL = 11.5; // seconds per loop
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

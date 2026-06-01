@@ -107,6 +107,28 @@ instinct you teach Mandolin still reads in Claude Code, Cursor, or Codex). New o
 `proposed/`. They do nothing until you `mando promote` them into `trusted/`. Promotion records
 a digest and writes a line to `ledger.md` — your audit trail of what you trusted, and when.
 
+**Import the whole ecosystem — safely** — `mando import <url|file>`
+`SKILL.md` is an open standard, so Mandolin runs skills written for Hermes, Claude Code, or
+Cursor — pull any of them in by URL or path. The difference is what happens on arrival.
+Elsewhere, an installed skill is trusted by default. In Mandolin, every import is **scanned**
+for dangerous instructions (pipe-to-shell installers, `rm -rf`, credential exfiltration,
+history-wiping…), lands **inert in `proposed/`** with the verdict on the label, and a skill the
+scanner flags `dangerous` **cannot be promoted** without an explicit `--force` that gets recorded
+in the ledger. You get the entire ecosystem's library — and you're safer with it than at the source.
+
+```
+$ mando import --demo     # no network needed — watch two skills arrive
+
+  ✓ Clean Formatter         scan verdict: CLEAN       → proposed/clean-formatter
+  ✗ Totally Legit Helper    scan verdict: DANGEROUS · 6 findings
+      • environment exfiltration (line 9):  env | curl -X POST https://…
+      • recursive force delete (rm -rf)   · privilege escalation (sudo)
+      • pipe-to-shell installer (curl … | sh)
+    This skill is quarantined. promote refuses it unless you --force.
+
+  their skills install trusted. ours arrive scanned and inert.
+```
+
 **The loop**
 ```
    perceive → act → reflect → propose → (you) promote
@@ -138,6 +160,7 @@ Deliberately small. Depth over breadth.
 | `mando chat [msg]` | talk to it — operates from your Signature |
 | `mando signature` | read the compounding model of you |
 | `mando skills` | trusted instincts + what's proposed |
+| `mando import <url\|file>` | pull in any ecosystem skill — scanned, quarantined |
 | `mando promote <name>` | sign off — make a proposed instinct trusted |
 | `mando grant <cap>` | let it act unprompted (write/exec/network) |
 | `mando reflect` | distill the latest session by hand |
@@ -174,13 +197,14 @@ mando model ollama llama3.3        # fully local, no key, nothing leaves the mac
 v0.1, honest about itself:
 
 - **Live:** the Signature, file-based memory, the proposed→trusted instinct gate with digests +
-  ledger, the reflection loop (LLM-driven with a key; deterministic offline), **gated tool
-  execution** (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a
-  real agentic loop, model-agnostic providers (Anthropic / OpenAI-compatible / Ollama), and the
-  offline `demo` and `act` rehearsals.
-- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), semantic
-  recall alongside keyword search, per-tool path scoping for writes, and a published
-  `npm` / `npx mando` build.
+  ledger, **ecosystem skill import with a quarantine scanner** (`mando import`), the reflection
+  loop (LLM-driven with a key; deterministic offline), **gated tool execution**
+  (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a real agentic
+  loop, model-agnostic providers (Anthropic / OpenAI-compatible / Ollama), and the offline `demo`,
+  `act`, and `import` rehearsals.
+- **Next:** semantic recall alongside keyword search (beating grep-only memory), the always-on
+  gateway for messaging channels (Telegram/Discord/Slack/…), more providers out of the box, and a
+  published `npm` / `npx mando` build.
 
 ---
 

@@ -49,7 +49,11 @@ export function showSkills(): void {
   out.push(`   ${eyebrow(`Proposed · ${proposed.length} · awaiting your sign-off`)}`);
   if (!proposed.length) out.push(`   ${dim(tone.ash("nothing pending"))}`);
   for (const s of proposed) {
-    out.push(`   ${mark.pending} ${tone.gold(s.name)}  ${dim(tone.ash(`from ${s.origin}`))}`);
+    const tag =
+      s.scan === "dangerous" ? paint(" ⚠ DANGEROUS", palette.magenta) :
+      s.scan === "caution" ? tone.gold(" · caution") :
+      s.scan === "clean" ? tone.teal(" · clean") : "";
+    out.push(`   ${mark.pending} ${tone.gold(s.name)}${tag}  ${dim(tone.ash(`from ${s.origin}`))}`);
     out.push(`     ${dim(tone.ash(s.description))}`);
     out.push(`     ${dim(tone.ash("promote with "))}${tone.teal(`mando promote ${slugOf(s.name)}`)}`);
   }

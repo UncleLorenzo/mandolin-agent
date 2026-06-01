@@ -7,6 +7,7 @@ import { init } from "./commands/init.ts";
 import { demo } from "./commands/demo.ts";
 import { chat } from "./commands/chat.ts";
 import { act } from "./commands/act.ts";
+import { importCmd } from "./commands/import.ts";
 import { showSignature, showSkills, showStatus, showLedger } from "./commands/inspect.ts";
 import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
@@ -46,7 +47,10 @@ switch (cmd) {
     showSkills();
     break;
   case "promote":
-    promoteCmd(rest[0]);
+    promoteCmd(rest);
+    break;
+  case "import":
+    await importCmd(rest);
     break;
   case "grant":
     grant(rest[0]);
@@ -105,6 +109,7 @@ function help(): void {
     ["chat [msg]", "talk to it — operates from your Signature"],
     ["signature", "read the compounding model of you"],
     ["skills", "trusted instincts + what's proposed"],
+    ["import <url|file>", "pull in any ecosystem skill — scanned, quarantined"],
     ["promote <name>", "sign off — make a proposed instinct trusted"],
     ["grant <cap>", "let it act unprompted (write/exec/network)"],
     ["reflect", "distill the latest session by hand"],
