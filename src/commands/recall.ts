@@ -60,10 +60,10 @@ function scoreBar(score: number, max: number): string {
 // ---- offline demo: the grep-killer ----------------------------------------
 
 const MEMORY_SEED: { role: "you" | "mandolin"; text: string }[] = [
-  { role: "you", text: "When we ship, never use exclamation points or hype words. Lowercase, confident, discreet." },
+  { role: "you", text: "Keep the tone lowercase, confident, discreet — never hype." },
   { role: "you", text: "Our customers are elite AI builders who hate influencer clickbait." },
-  { role: "you", text: "We integrate Stripe for subscriptions; invoices go out on the 1st." },
-  { role: "mandolin", text: "Noted — I'll keep the billing cadence monthly and the tone understated." },
+  { role: "you", text: "We deploy on Fridays, only after the full test suite is green." },
+  { role: "mandolin", text: "Noted — I'll keep the tone understated and the copy tight." },
   { role: "you", text: "The login flow was crashing on Safari last week; we patched the OAuth redirect." },
 ];
 
@@ -84,7 +84,7 @@ function recallDemo(): void {
   ];
   process.stdout.write(out.join("\n") + "\n");
 
-  demoQuery("how do we handle payments?", "'payment' was never said — bridged to Stripe/billing");
+  demoQuery("when do we release?", "'release' was never said — bridged to 'deploy'");
   demoQuery("any recent defects?", "'defect' was never said — bridged to the Safari crash");
   demoQuery("who are our users?", "'users' was never said — bridged to customers");
 

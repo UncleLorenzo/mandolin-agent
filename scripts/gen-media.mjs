@@ -50,9 +50,9 @@ const lines = [
   [],
   [["— and it recalls by meaning, not grep —", C.ash]],
   [],
-  [["mando recall ", C.bone], ['"how do we handle payments?"', C.dim]],
-  [["  → ", C.teal], ["We integrate Stripe for subscriptions; invoices on the 1st.", C.bone]],
-  [['    "payment" was never written — ', C.dim], ["bridged by meaning.", C.cream]],
+  [["mando recall ", C.bone], ['"when do we release?"', C.dim]],
+  [["  → ", C.teal], ["We deploy on Fridays, only after the test suite is green.", C.bone]],
+  [['    "release" was never written — ', C.dim], ["bridged by meaning.", C.cream]],
 ];
 
 const W = 776;

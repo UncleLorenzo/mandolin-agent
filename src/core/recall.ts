@@ -4,7 +4,7 @@
 // smarter than grep." Mandolin has two tiers, and is honest about which is which:
 //
 //   • RANKED (offline, zero deps): BM25 relevance over stemmed terms, with a
-//     small synonym bridge so "payment" finds "billing/stripe/invoice". This is
+//     small synonym bridge so "release" finds "deploy/ship/launch". This is
 //     genuine ranked retrieval — not substring matching — and needs no key.
 //   • SEMANTIC (with an embeddings key): true vector search over cached
 //     embeddings stored as plain JSON on disk (inspectable, like everything else).

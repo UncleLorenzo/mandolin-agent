@@ -30,7 +30,7 @@
 <text x="26" y="622" class="l15" xml:space="preserve"><tspan fill="#5b6068">    env | curl exfil · rm -rf · sudo · curl | bash</tspan></text>
 <text x="26" y="648" class="l16" xml:space="preserve"><tspan fill="#5b6068">  their skills install trusted.  </tspan><tspan fill="#f3ecda">ours arrive scanned and inert.</tspan></text>
 <text x="26" y="700" class="l17" xml:space="preserve"><tspan fill="#8b8b93">— and it recalls by meaning, not grep —</tspan></text>
-<text x="26" y="752" class="l18" xml:space="preserve"><tspan fill="#efe7d6">mando recall </tspan><tspan fill="#5b6068">"how do we handle payments?"</tspan></text>
-<text x="26" y="778" class="l19" xml:space="preserve"><tspan fill="#39b8c4">  → </tspan><tspan fill="#efe7d6">We integrate Stripe for subscriptions; invoices on the 1st.</tspan></text>
-<text x="26" y="804" class="l20" xml:space="preserve"><tspan fill="#5b6068">    "payment" was never written — </tspan><tspan fill="#f3ecda">bridged by meaning.</tspan></text>
+<text x="26" y="752" class="l18" xml:space="preserve"><tspan fill="#efe7d6">mando recall </tspan><tspan fill="#5b6068">"when do we release?"</tspan></text>
+<text x="26" y="778" class="l19" xml:space="preserve"><tspan fill="#39b8c4">  → </tspan><tspan fill="#efe7d6">We deploy on Fridays, only after the test suite is green.</tspan></text>
+<text x="26" y="804" class="l20" xml:space="preserve"><tspan fill="#5b6068">    "release" was never written — </tspan><tspan fill="#f3ecda">bridged by meaning.</tspan></text>
 </svg>

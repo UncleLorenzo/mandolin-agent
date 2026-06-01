@@ -100,17 +100,17 @@ it came from, so you can always trace *why* the agent believes what it believes.
 Plain-text session logs and a short, curated facts file — no opaque vector database you can't
 read. But recall isn't dumb substring matching. `mando recall "<question>"` ranks your whole
 memory by *meaning*: offline it's **BM25 relevance with stemming and a synonym bridge** (so
-"payments" finds the line about Stripe, even though the word "payment" was never written); with an
-embeddings key it upgrades to **true semantic vectors**, cached on disk as plain JSON you can still
-inspect. Most agents in this wave recall by keyword — the kind their own users call "dumber than it
-should be." This one bridges the vocabulary gap.
+"when do we release?" finds the note about *deploying*, even though the word "release" was never
+written); with an embeddings key it upgrades to **true semantic vectors**, cached on disk as plain
+JSON you can still inspect. Most agents in this wave recall by keyword — the kind their own users
+call "dumber than it should be." This one bridges the vocabulary gap.
 
 ```
 $ mando recall --demo     # no key needed
 
-  ? how do we handle payments?
-    → We integrate Stripe for subscriptions; invoices go out on the 1st.
-      ('payment' was never said — bridged to Stripe/billing)
+  ? when do we release?
+    → We deploy on Fridays, only after the full test suite is green.
+      ('release' was never said — bridged to 'deploy')
 
   ? any recent defects?
     → The login flow was crashing on Safari; we patched the OAuth redirect.
