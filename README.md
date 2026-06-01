@@ -208,10 +208,15 @@ Anthropic · OpenAI · Ollama · Google Gemini · Groq · Mistral · DeepSeek ·
 
 ## Everything is yours
 
+- **Free, and staying that way.** No subscription, no "Pro" tier, no first-party portal on the
+  happy path quietly metering your usage. Bring your own keys; the smoothest path is the free one.
+  The agent never upsells you, because it has nothing to sell.
 - **Self-hosted.** It lives in `~/.mandolin`. No account, no cloud, no telemetry.
 - **Inspectable.** Signature, memory, instincts, ledger — all plain text. `cat` it, `grep` it,
   `git` it, delete it.
 - **Portable.** Commit `~/.mandolin` to a private repo and your agent's whole self moves with you.
+- **No vendor gravity.** 10 providers, all equal — none nudged because it pays us. Point it at a
+  fully-local model and nothing leaves your machine, ever.
 - **Lean.** Zero runtime dependencies. The model API is just HTTPS; we call it with `fetch`.
 
 ---
@@ -239,10 +244,19 @@ you can read, and that distill their own experience into reusable skills. We're 
 that wave — and we pointed it somewhere new: at *taste*, and at *trust*. This is original code,
 not a fork.
 
+## Who builds this
+
+Mandolin is the home for the wave of AI builders who'd rather own their work than be drowned out
+by the noise. This agent is the first thing we've made public. It's free because the best things
+we build aren't the ones we charge you for.
+
+If that resonates, the door is at **[gomandolin.com](https://gomandolin.com)**. We're selective
+on purpose.
+
 ## License
 
 MIT. Build on it, ship it, make it yours.
 
 <div align="center">
-<sub>made by <a href="https://gomandolin.com">Mandolin</a> · the smallest cut, the largest upside</sub>
+<sub>made by <a href="https://gomandolin.com">Mandolin</a> · own your brand, amplified by the many</sub>
 </div>
