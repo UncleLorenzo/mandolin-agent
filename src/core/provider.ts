@@ -4,7 +4,35 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { paths } from "../home.ts";
 
-export type Provider = "anthropic" | "ollama" | "openai";
+export type Provider =
+  | "anthropic"
+  | "openai"
+  | "ollama"
+  | "google"
+  | "groq"
+  | "mistral"
+  | "deepseek"
+  | "together"
+  | "openrouter"
+  | "xai";
+
+/**
+ * Provider registry. Everything except Anthropic and Ollama speaks the
+ * OpenAI-compatible Chat Completions API — so adding a provider is a base URL
+ * and an env var, not a new SDK. Model-agnostic, no lock-in, zero deps.
+ */
+export const PROVIDERS: Record<Provider, { label: string; baseUrl?: string; envKey?: string; openaiCompatible: boolean }> = {
+  anthropic: { label: "Anthropic (Claude)", envKey: "ANTHROPIC_API_KEY", openaiCompatible: false },
+  openai: { label: "OpenAI", baseUrl: "https://api.openai.com/v1", envKey: "OPENAI_API_KEY", openaiCompatible: true },
+  ollama: { label: "Ollama (local)", baseUrl: "http://localhost:11434", openaiCompatible: false },
+  google: { label: "Google Gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", envKey: "GEMINI_API_KEY", openaiCompatible: true },
+  groq: { label: "Groq", baseUrl: "https://api.groq.com/openai/v1", envKey: "GROQ_API_KEY", openaiCompatible: true },
+  mistral: { label: "Mistral", baseUrl: "https://api.mistral.ai/v1", envKey: "MISTRAL_API_KEY", openaiCompatible: true },
+  deepseek: { label: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", envKey: "DEEPSEEK_API_KEY", openaiCompatible: true },
+  together: { label: "Together AI", baseUrl: "https://api.together.xyz/v1", envKey: "TOGETHER_API_KEY", openaiCompatible: true },
+  openrouter: { label: "OpenRouter (200+ models)", baseUrl: "https://openrouter.ai/api/v1", envKey: "OPENROUTER_API_KEY", openaiCompatible: true },
+  xai: { label: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", envKey: "XAI_API_KEY", openaiCompatible: true },
+};
 
 /** Classes of action the agent can be trusted with. Off by default. */
 export type Capability = "write" | "exec" | "network";
@@ -49,8 +77,8 @@ export function setCapability(cap: Capability, on: boolean): Config {
 /** Resolve the API key for the active provider, if any. */
 export function apiKey(provider: Provider): string | undefined {
   if (provider === "anthropic") return process.env.ANTHROPIC_API_KEY || process.env.MANDOLIN_API_KEY;
-  if (provider === "openai") return process.env.OPENAI_API_KEY;
-  return undefined; // ollama is keyless
+  const envKey = PROVIDERS[provider]?.envKey;
+  return envKey ? process.env[envKey] : undefined; // ollama is keyless
 }
 
 /** Is there a live model behind the agent right now? If not, we rehearse offline. */
@@ -69,8 +97,8 @@ export type Message = { role: "user" | "assistant"; content: string };
 export async function complete(system: string, messages: Message[], maxTokens = 1024): Promise<string> {
   const cfg = getConfig();
   if (cfg.provider === "anthropic") return anthropic(cfg, system, messages, maxTokens);
-  if (cfg.provider === "openai") return openaiCompatible(cfg, system, messages, maxTokens);
   if (cfg.provider === "ollama") return ollama(cfg, system, messages, maxTokens);
+  if (PROVIDERS[cfg.provider]?.openaiCompatible) return openaiCompatible(cfg, system, messages, maxTokens);
   throw new Error(`Unknown provider: ${cfg.provider}`);
 }
 
@@ -130,8 +158,8 @@ async function anthropic(cfg: Config, system: string, messages: Message[], maxTo
 }
 
 async function openaiCompatible(cfg: Config, system: string, messages: Message[], maxTokens: number): Promise<string> {
-  const key = apiKey("openai");
-  const base = cfg.baseUrl || "https://api.openai.com/v1";
+  const key = apiKey(cfg.provider);
+  const base = cfg.baseUrl || PROVIDERS[cfg.provider]?.baseUrl || "https://api.openai.com/v1";
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${key ?? ""}`, "content-type": "application/json" },

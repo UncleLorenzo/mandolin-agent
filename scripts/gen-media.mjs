@@ -47,6 +47,12 @@ const lines = [
   [["  ✗ ", C.magenta], ["DANGEROUS", C.magenta], [" · 6 findings · ", C.ash], ["quarantined in proposed/", C.gold]],
   [["    env | curl exfil · rm -rf · sudo · curl | bash", C.dim]],
   [["  their skills install trusted.  ", C.dim], ["ours arrive scanned and inert.", C.cream]],
+  [],
+  [["— and it recalls by meaning, not grep —", C.ash]],
+  [],
+  [["mando recall ", C.bone], ['"how do we handle payments?"', C.dim]],
+  [["  → ", C.teal], ["We integrate Stripe for subscriptions; invoices on the 1st.", C.bone]],
+  [['    "payment" was never written — ', C.dim], ["bridged by meaning.", C.cream]],
 ];
 
 const W = 776;
@@ -55,7 +61,7 @@ const TITLEH = 46;
 const LINEH = 26;
 const TOP = TITLEH + 30;
 const H = TOP + lines.length * LINEH + 14;
-const TOTAL = 11.5; // seconds per loop
+const TOTAL = 14; // seconds per loop
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

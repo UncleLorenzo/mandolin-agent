@@ -8,6 +8,7 @@ import { demo } from "./commands/demo.ts";
 import { chat } from "./commands/chat.ts";
 import { act } from "./commands/act.ts";
 import { importCmd } from "./commands/import.ts";
+import { recallCmd } from "./commands/recall.ts";
 import { showSignature, showSkills, showStatus, showLedger } from "./commands/inspect.ts";
 import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
@@ -51,6 +52,10 @@ switch (cmd) {
     break;
   case "import":
     await importCmd(rest);
+    break;
+  case "recall":
+  case "remember":
+    await recallCmd(rest);
     break;
   case "grant":
     grant(rest[0]);
@@ -108,6 +113,7 @@ function help(): void {
     ["act <task>", "put it to work with tools, through the gate"],
     ["chat [msg]", "talk to it — operates from your Signature"],
     ["signature", "read the compounding model of you"],
+    ["recall <query>", "ask your memory — ranked by meaning, not grep"],
     ["skills", "trusted instincts + what's proposed"],
     ["import <url|file>", "pull in any ecosystem skill — scanned, quarantined"],
     ["promote <name>", "sign off — make a proposed instinct trusted"],

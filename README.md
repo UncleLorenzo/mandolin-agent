@@ -96,10 +96,26 @@ A Markdown file with four sections: Voice, Standards, Audience, Context. Loaded 
 before every turn, refined after every session. Each learned line is stamped with the session
 it came from, so you can always trace *why* the agent believes what it believes.
 
-**Memory** — `~/.mandolin/memory/`
-Plain-text session logs and a short, curated facts file. No vector database, no opaque
-embeddings. If you can't read what your agent remembers, you don't own it. Recall is keyword
-search over files you can `grep` yourself.
+**Memory + recall that's smarter than grep** — `~/.mandolin/memory/`
+Plain-text session logs and a short, curated facts file — no opaque vector database you can't
+read. But recall isn't dumb substring matching. `mando recall "<question>"` ranks your whole
+memory by *meaning*: offline it's **BM25 relevance with stemming and a synonym bridge** (so
+"payments" finds the line about Stripe, even though the word "payment" was never written); with an
+embeddings key it upgrades to **true semantic vectors**, cached on disk as plain JSON you can still
+inspect. Most agents in this wave recall by keyword — the kind their own users call "dumber than it
+should be." This one bridges the vocabulary gap.
+
+```
+$ mando recall --demo     # no key needed
+
+  ? how do we handle payments?
+    → We integrate Stripe for subscriptions; invoices go out on the 1st.
+      ('payment' was never said — bridged to Stripe/billing)
+
+  ? any recent defects?
+    → The login flow was crashing on Safari; we patched the OAuth redirect.
+      ('defect' was never said — bridged to the crash)
+```
 
 **Instincts + the trust gate** — `~/.mandolin/skills/`
 Distilled, reusable procedures in the `agentskills.io`-compatible `SKILL.md` format (so an
@@ -159,6 +175,7 @@ Deliberately small. Depth over breadth.
 | `mando act <task>` | put it to work with tools, through the gate |
 | `mando chat [msg]` | talk to it — operates from your Signature |
 | `mando signature` | read the compounding model of you |
+| `mando recall <query>` | ask your memory — ranked by meaning, not grep |
 | `mando skills` | trusted instincts + what's proposed |
 | `mando import <url\|file>` | pull in any ecosystem skill — scanned, quarantined |
 | `mando promote <name>` | sign off — make a proposed instinct trusted |
@@ -172,13 +189,20 @@ Deliberately small. Depth over breadth.
 
 ## Model-agnostic
 
-Default is Claude. Swap with one line — no code changes, no lock-in.
+Default is Claude. **10 providers** out of the box — swap with one line, no code changes, no
+lock-in. Everything except Anthropic and Ollama speaks the OpenAI-compatible API, so adding a
+provider is a base URL, not a new SDK.
 
 ```bash
-mando model claude-opus-4-8        # a different Claude
-mando model openai gpt-...         # any OpenAI-compatible endpoint
-mando model ollama llama3.3        # fully local, no key, nothing leaves the machine
+mando model claude-opus-4-8          # a different Claude
+mando model groq llama-3.3-70b       # Groq
+mando model google gemini-2.5-pro    # Google Gemini
+mando model openrouter <any-model>   # OpenRouter — 200+ models
+mando model ollama llama3.3          # fully local, no key, nothing leaves the machine
+mando model list                     # see all providers + which have keys
 ```
+
+Anthropic · OpenAI · Ollama · Google Gemini · Groq · Mistral · DeepSeek · Together · OpenRouter · xAI
 
 ---
 
@@ -202,8 +226,8 @@ v0.1, honest about itself:
   (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a real agentic
   loop, model-agnostic providers (Anthropic / OpenAI-compatible / Ollama), and the offline `demo`,
   `act`, and `import` rehearsals.
-- **Next:** semantic recall alongside keyword search (beating grep-only memory), the always-on
-  gateway for messaging channels (Telegram/Discord/Slack/…), more providers out of the box, and a
+- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), richer
+  semantic recall (re-ranking, larger synonym corpus), per-tool path scoping for writes, and a
   published `npm` / `npx mando` build.
 
 ---

@@ -15,6 +15,7 @@ import { setCapability } from "../src/core/provider.ts";
 import { reflectFromInterview } from "../src/core/reflect.ts";
 import { scan } from "../src/core/scan.ts";
 import { SAMPLE_CLEAN, SAMPLE_POISONED } from "../src/commands/import.ts";
+import { rankedSearch, tokenize } from "../src/core/recall.ts";
 
 ensureHome();
 
@@ -128,4 +129,38 @@ test("import: parses real YAML frontmatter (quoted values, foreign keys)", () =>
   const s = list("proposed").find((x) => x.name === "Foreign Skill");
   assert.ok(s, "should parse quoted name from frontmatter");
   assert.equal(s.description, "has quotes");
+});
+
+// --- recall: smarter than grep ---------------------------------------------
+
+const RECALL_DOCS = [
+  { id: "1", source: "s", text: "We integrate Stripe for subscriptions; invoices go out on the 1st." },
+  { id: "2", source: "s", text: "Our customers are elite AI builders who hate clickbait." },
+  { id: "3", source: "s", text: "The login flow was crashing on Safari; we patched the OAuth redirect." },
+  { id: "4", source: "s", text: "Ship in lowercase, confident, discreet. Never hype." },
+];
+
+test("recall: synonym bridge survives stemming (the bug that shipped wrong once)", () => {
+  // 'payments' must bridge to billing/stripe even after stem('payments')='payment'
+  assert.ok(tokenize("payments").includes(tokenize("billing")[0]), "payment should map to the billing stem");
+  assert.ok(tokenize("crashing").includes(tokenize("defect")[0]), "crash should map to the defect stem");
+});
+
+test("recall: finds passages that share NO words with the query (beats grep)", () => {
+  // "payments" appears nowhere in the corpus, yet should surface the Stripe line.
+  const pay = rankedSearch("how do we handle payments?", RECALL_DOCS, 1);
+  assert.equal(pay[0]?.id, "1", "payments → Stripe/invoices line");
+
+  const defects = rankedSearch("any recent defects?", RECALL_DOCS, 1);
+  assert.equal(defects[0]?.id, "3", "defects → crashing/login line");
+
+  const users = rankedSearch("who are our users?", RECALL_DOCS, 1);
+  assert.equal(users[0]?.id, "2", "users → customers line");
+});
+
+test("recall: a plain substring search would miss what recall finds", () => {
+  const q = "payments";
+  const substringHits = RECALL_DOCS.filter((d) => d.text.toLowerCase().includes(q));
+  assert.equal(substringHits.length, 0, "grep finds nothing");
+  assert.ok(rankedSearch(q, RECALL_DOCS, 1).length > 0, "recall finds something");
 });
