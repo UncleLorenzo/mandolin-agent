@@ -33,6 +33,8 @@ src/
     agent.ts          # the live loop: assemble the system prompt, run tools through the gate
     reflect.ts        # the closed loop: a session → Signature deltas + a proposed instinct
     sovereignty.ts    # export the whole self; forget anything, for real
+    gateway.ts        # always-on Telegram gateway (HTTPS); the remote (stricter) approver
+    pairing.ts        # the chat allowlist: nobody talks to the gateway until you approve them
   commands/           # one file per command, presentation only — logic lives in core/
 test/
   core.test.ts        # node:test over the trust-critical paths

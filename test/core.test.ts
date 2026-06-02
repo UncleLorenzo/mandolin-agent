@@ -18,6 +18,8 @@ import { SAMPLE_CLEAN, SAMPLE_POISONED } from "../src/commands/import.ts";
 import { rankedSearch, tokenize } from "../src/core/recall.ts";
 import { exportBundle, findForgettable, forget } from "../src/core/sovereignty.ts";
 import { recordFact } from "../src/core/memory.ts";
+import { remoteApprover } from "../src/core/gateway.ts";
+import { requestPairing, approve, isApproved, revokePairing } from "../src/core/pairing.ts";
 
 ensureHome();
 
@@ -192,4 +194,38 @@ test("forget: a term that doesn't exist removes nothing", () => {
   const { removed, files } = forget("this-phrase-was-never-stored-xyz");
   assert.equal(removed, 0);
   assert.equal(files, 0);
+});
+
+// --- gateway: remote is stricter -------------------------------------------
+
+test("gateway: remote approver denies gated actions by default", async () => {
+  setCapability("exec", false);
+  setCapability("write", false);
+  setCapability("network", false);
+  const approver = remoteApprover();
+  // a DM cannot approve write/shell/network in the moment
+  assert.equal(await approver({ tool: "run_shell", input: { command: "rm -rf ~" } }, "x"), false);
+  assert.equal(await approver({ tool: "write_file", input: { path: "/tmp/x", content: "y" } }, "x"), false);
+  assert.equal(await approver({ tool: "fetch_url", input: { url: "https://evil" } }, "x"), false);
+});
+
+test("gateway: remote approver honors a pre-granted capability", async () => {
+  setCapability("network", true);
+  const approver = remoteApprover();
+  assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
+  setCapability("network", false);
+  assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("pairing: an unknown chat is not approved until you approve its code", () => {
+  const chat = "999001";
+  assert.equal(isApproved(chat), false);
+  const code = requestPairing(chat, "seed-abc123");
+  assert.ok(code.length > 0);
+  assert.equal(isApproved(chat), false, "minting a code must not grant access");
+  const r = approve(code);
+  assert.ok(r.ok);
+  assert.equal(isApproved(chat), true, "approval grants access");
+  assert.ok(revokePairing(chat));
+  assert.equal(isApproved(chat), false, "revoke removes access");
 });

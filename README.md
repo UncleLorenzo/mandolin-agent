@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-20%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-23%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -167,6 +167,28 @@ standing grant (`mando grant exec`) or your in-the-moment yes. Every action it t
 one you stop — is written to `actions.md`. Run `mando act` with no model key to watch the gate
 work offline: it really runs the harmless command, and really refuses the destructive one.
 
+**Living on a server — without handing over the keys** — `mando gateway`
+Run it on a $5 VPS and reach it from Telegram, so the agent works while you're away. Here's the
+part most "agent on Telegram" setups get wrong: a remote message is **not** you at the keyboard.
+So Mandolin is *stricter* over chat, by construction:
+
+- **Pairing.** Only chat IDs you've approved can talk to it at all. First contact gets a one-time
+  code you approve from the trusted CLI (`mando pair approve <code>`). No open mic.
+- **Remote is stricter.** There's no keyboard to approve a risky action in a DM — so gated actions
+  (write / shell / network) are **denied outright** unless you pre-granted that capability. A
+  message can read and converse, but it **cannot be talked into** wrecking your box.
+- Every remote action and every denial still lands in `actions.md`.
+
+```
+$ mando gateway --demo     # no bot token needed
+
+  DM → read a project file   (read_file)   ✓ allowed — reads are safe over chat
+  DM → delete a directory    (run_shell)   ✗ refused — gated, no keyboard to approve · logged
+  DM → hit the network       (fetch_url)   ✗ refused — gated, no keyboard to approve · logged
+```
+
+Zero dependencies — Telegram's Bot API is just HTTPS. `export TELEGRAM_BOT_TOKEN=… && mando gateway`.
+
 ---
 
 ## The command surface
@@ -190,6 +212,8 @@ Deliberately small. Depth over breadth.
 | `mando model [name]` | swap the model / provider |
 | `mando export [file]` | your whole self in one portable file |
 | `mando forget <term>` | erase anything from memory — for real |
+| `mando gateway` | live on a server, reachable over Telegram |
+| `mando pair [approve]` | control who may DM your agent |
 | `mando status` | where things stand |
 | `mando ledger` | the audit trail of what you trusted |
 
@@ -239,13 +263,14 @@ v0.1, honest about itself:
 
 - **Live:** the Signature, file-based memory, **recall smarter than grep**, the proposed→trusted
   instinct gate with digests + ledger, **ecosystem skill import with a quarantine scanner**
-  (`mando import`), **export + true erasure** (`mando export` / `mando forget`), the reflection
-  loop (LLM-driven with a key; deterministic offline), **gated tool execution**
+  (`mando import`), **export + true erasure** (`mando export` / `mando forget`), the **always-on
+  Telegram gateway** with pairing + a stricter-by-default remote trust posture (`mando gateway`),
+  the reflection loop (LLM-driven with a key; deterministic offline), **gated tool execution**
   (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a real agentic
-  loop, 10 model providers, and offline `demo` / `act` / `import` / `recall` rehearsals. 20 tests,
-  CI green, zero runtime deps. See [ARCHITECTURE.md](ARCHITECTURE.md).
-- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), per-tool
-  path scoping for writes, and a published `npm` / `npx mando` build.
+  loop, 10 model providers, and offline `demo` / `act` / `import` / `recall` / `gateway`
+  rehearsals. 23 tests, CI green, zero runtime deps. See [ARCHITECTURE.md](ARCHITECTURE.md).
+- **Next:** more messaging channels (Discord/Slack), per-tool path scoping for writes, and a
+  published `npm` / `npx mando` build.
 
 ---
 

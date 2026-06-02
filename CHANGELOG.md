@@ -6,6 +6,12 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **`mando gateway`** — the always-on gateway: run on a server, reach the agent over Telegram
+  (zero-dep, HTTPS long-poll). Two safety guarantees baked in: **pairing** (only approved chat IDs
+  may talk to it; first contact gets a one-time code you approve from the CLI) and **remote-is-
+  stricter** (gated write/shell/network actions are denied over chat unless pre-granted, since
+  there's no keyboard to approve). Every remote action/denial is audited. Offline `--demo`.
+- **`mando pair [approve|revoke]`** — manage who may DM the agent.
 - **`mando export [file]`** — your agent's entire self (Signature, facts, instincts, ledger,
   sessions) as one portable, readable Markdown bundle.
 - **`mando forget <term>`** — true data erasure: preview every matching line, confirm, then

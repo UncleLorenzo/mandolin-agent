@@ -13,6 +13,7 @@ import { showSignature, showSkills, showStatus, showLedger } from "./commands/in
 import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
 import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
+import { gatewayCmd, pairCmd } from "./commands/gateway.ts";
 import { modelCmd } from "./commands/model.ts";
 import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette } from "./brand.ts";
 import { readSignature } from "./core/signature.ts";
@@ -69,6 +70,12 @@ switch (cmd) {
     break;
   case "forget":
     await forgetCmd(rest);
+    break;
+  case "gateway":
+    await gatewayCmd(rest);
+    break;
+  case "pair":
+    pairCmd(rest);
     break;
   case "reflect":
     await reflectLatest();
@@ -129,6 +136,8 @@ function help(): void {
     ["model [name]", "swap the model / provider"],
     ["export [file]", "your whole self in one portable file"],
     ["forget <term>", "erase anything from memory — for real"],
+    ["gateway", "live on a server, reachable over Telegram"],
+    ["pair [approve]", "control who may DM your agent"],
     ["status", "where things stand"],
     ["ledger", "the audit trail of what you trusted"],
   ];
