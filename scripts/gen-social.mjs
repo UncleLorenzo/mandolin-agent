@@ -139,10 +139,6 @@ x.fillText("i", startX + wPre, py);
 x.font = `600 ${wmSize}px Fraunces`;
 x.fillText(wmTail, startX + wPre + wI, py);
 
-// blinking-cursor block after the wordmark
-x.fillStyle = ORANGE;
-x.fillRect(startX + totalW + 14, py - wmSize * 0.62, 18, wmSize * 0.62);
-
 // ---- tagline (serif, understated) ----
 py = 388;
 x.font = "italic 34px FrauncesItalic";
