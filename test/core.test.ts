@@ -25,6 +25,7 @@ import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
 import { classifyWrite } from "../src/core/scope.ts";
+import { shouldOnboard, onboardRecap } from "../src/commands/onboard.ts";
 import { resilientFetch, isTransientStatus, HttpError, AbortError } from "../src/core/net.ts";
 import { streamComplete } from "../src/core/provider.ts";
 import { verifySignature } from "../src/core/skills.ts";
@@ -461,6 +462,18 @@ test("gateway: remote approver honors a pre-granted capability", async () => {
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
   setCapability("network", false);
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("onboard: --quick and non-TTY skip the interview; recap reflects answers", () => {
+  // --quick always skips, regardless of TTY
+  assert.equal(shouldOnboard(["--quick"]), false);
+  assert.equal(shouldOnboard(["-q"]), false);
+  // in the test runner stdin is not a TTY, so it should skip (never block CI)
+  assert.equal(shouldOnboard([]), false);
+  // recap copy adapts to how many answers were kept
+  assert.ok(onboardRecap(0).join(" ").toLowerCase().includes("skipped"));
+  assert.ok(onboardRecap(3).join(" ").includes("3 things"));
+  assert.ok(onboardRecap(1).join(" ").includes("1 thing"));
 });
 
 test("config: validateConfig keeps good values and reports bad ones", () => {

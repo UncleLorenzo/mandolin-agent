@@ -35,7 +35,7 @@ switch (cmd) {
     hero();
     break;
   case "init":
-    init();
+    await init(rest);
     break;
   case "demo":
     demo();

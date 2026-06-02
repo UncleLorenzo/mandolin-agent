@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-46%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-47%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -103,9 +103,27 @@ During development you can skip the build and run straight off the source —
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...   # or any of 10 providers — see "Model-agnostic"
-mando init                        # establish your Signature + local home
+mando init                        # establish your Signature + a 60-second interview
 mando chat                        # put it to work; it operates from your Signature
 ```
+
+On a fresh run, `mando init` asks you four quick questions (skip any with Enter) so the agent
+sounds like *you* from the very first session — not a generic assistant you have to break in:
+
+```
+   let's make this yours · four quick questions, skip any with Enter
+
+   mandolin  How should I sound when I write as you?
+             tone, cadence, words you'd never use
+   you       discreet, lowercase, never hype
+
+   mandolin  What makes something good enough to ship?
+   you       if anyone could've made it, it's not done
+   …
+   + Signature seeded with 4 things about you
+```
+
+Prefer to skip it? `mando init --quick`. It also auto-skips in non-interactive shells (CI, pipes).
 
 ---
 

@@ -6,6 +6,11 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **First-run onboarding.** On a fresh, interactive `mando init`, a 60-second four-question
+  interview seeds the Signature (Voice / Standards / Audience / Context) so the agent sounds like
+  you from session one. Every question is skippable (Enter), Ctrl-C bails out of the interview
+  without aborting init, and it auto-skips with `--quick` or in non-interactive shells (CI, pipes).
+  Answers are stamped with `onboarding` provenance.
 - **Graceful Ctrl-C.** Interrupting a streaming reply aborts just that answer (keeping what
   streamed) and returns to the prompt; Ctrl-C at an idle prompt ends the session cleanly. Abort
   is plumbed through `streamComplete` → `resilientFetch` via `AbortSignal` and is never retried.
