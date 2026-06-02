@@ -1,5 +1,6 @@
-// Renders media/social.png — the elite, coder-oriented link-preview card.
-// 1280x640 (GitHub social-preview spec; also great for iMessage/Twitter/Slack).
+// Renders media/"Mandolin Agent.png" — the elite, coder-oriented link-preview
+// card. The filename IS the title most chat apps show, so it's named for the
+// product. 1280x640 (GitHub social-preview spec; also iMessage/Twitter/Slack).
 //
 // This is a build-time asset generator, kept OUT of the package's deps to honor
 // the zero-runtime-dependency promise. To regenerate the card:
@@ -8,7 +9,7 @@
 //   curl -sL -o fonts/Fraunces.ttf        "https://github.com/google/fonts/raw/main/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
 //   curl -sL -o fonts/Fraunces-Italic.ttf "https://github.com/google/fonts/raw/main/ofl/fraunces/Fraunces-Italic%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
 //   curl -sL -o fonts/JetBrainsMono.ttf   "https://github.com/google/fonts/raw/main/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf"
-//   cp <repo>/scripts/gen-social.mjs . && node gen-social.mjs <repo>/media/social.png
+//   cp <repo>/scripts/gen-social.mjs . && node gen-social.mjs "<repo>/media/Mandolin Agent.png"
 
 import { createCanvas, GlobalFonts } from "@napi-rs/canvas";
 import { writeFileSync } from "node:fs";
@@ -220,6 +221,6 @@ x.textAlign = "right";
 x.fillText("github.com/UncleLorenzo/mandolin-agent", W - 80, 556);
 
 const png = c.toBuffer("image/png");
-const out = process.argv[2] || join(here, "social.png");
+const out = process.argv[2] || join(here, "Mandolin Agent.png");
 writeFileSync(out, png);
 console.log(`wrote ${out} — ${(png.length / 1024).toFixed(0)} KB, ${W}x${H}`);

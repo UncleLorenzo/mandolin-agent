@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="media/social.png" alt="Mandolin — the agent that learns you" width="900">
+<img src="media/Mandolin%20Agent.png" alt="Mandolin — the agent that learns you" width="900">
 
 **The agent that learns *you*.**
 
