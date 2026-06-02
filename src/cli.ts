@@ -15,6 +15,7 @@ import { grant, revoke } from "./commands/grant.ts";
 import { scopeCmd } from "./commands/scope.ts";
 import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
 import { gatewayCmd, pairCmd } from "./commands/gateway.ts";
+import { identityCmd } from "./commands/identity.ts";
 import { doctor } from "./commands/doctor.ts";
 import { modelCmd } from "./commands/model.ts";
 import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette, paint } from "./brand.ts";
@@ -84,6 +85,10 @@ switch (cmd) {
     break;
   case "pair":
     pairCmd(rest);
+    break;
+  case "identity":
+  case "id":
+    identityCmd(rest);
     break;
   case "reflect":
     await reflectLatest();
@@ -161,6 +166,7 @@ function help(): void {
     ["forget <term>", "erase anything from memory — for real"],
     ["gateway", "live on a server, reachable over Telegram"],
     ["pair [approve]", "control who may DM your agent"],
+    ["identity", "your Ed25519 signing key + trusted signers"],
     ["status", "where things stand"],
     ["ledger", "the audit trail of what you trusted"],
   ];

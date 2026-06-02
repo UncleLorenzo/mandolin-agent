@@ -25,6 +25,11 @@ aim to acknowledge within a few days.
 - **No silent learning.** Distilled skills land in `skills/proposed/` and do nothing until
   you `mando promote` them. Promotion records a content digest; a trusted skill whose body
   no longer matches its digest is flagged as tampered.
+- **Signed provenance.** Promotion also signs the skill body with your **Ed25519** identity key.
+  `verifySignature` distinguishes `signed` (by a key you trust) from `untrusted-signer`,
+  `bad-signature`, and `unsigned` — so a forged or stranger-signed skill can't pass as yours.
+  The private key lives in `~/.mandolin/identity/key.pem` (mode 0600), is gitignored, and is
+  never exported, logged, or sent anywhere.
 
 ## Secrets
 - Model API keys are read from environment variables only. They are never written to the

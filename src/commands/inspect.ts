@@ -3,7 +3,7 @@
 import { wordmark, rule, tone, dim, bold, mark, eyebrow, palette, paint } from "../brand.ts";
 import { isInitialized, paths } from "../home.ts";
 import { readSignature, signatureDepth } from "../core/signature.ts";
-import { list, verify } from "../core/skills.ts";
+import { list, verify, verifySignature } from "../core/skills.ts";
 import { readFacts } from "../core/memory.ts";
 import { getConfig, isLive } from "../core/provider.ts";
 import { footprint } from "../core/sovereignty.ts";
@@ -42,9 +42,16 @@ export function showSkills(): void {
   out.push(`   ${eyebrow(`Trusted · ${trusted.length}`)}`);
   if (!trusted.length) out.push(`   ${dim(tone.ash("none yet — promote a proposed instinct to begin"))}`);
   for (const s of trusted) {
-    const intact = verify(s) ? mark.signed : paint("!", palette.magenta);
-    out.push(`   ${intact} ${tone.cream(s.name)}  ${dim(tone.ash(`digest ${s.digest}`))}`);
-    out.push(`     ${dim(tone.ash(s.description))}`);
+    const sig = verifySignature(s);
+    const intact = verify(s);
+    const badge =
+      !intact ? paint("✗ tampered", palette.magenta) :
+      sig === "signed" ? tone.teal("✦ signed") :
+      sig === "untrusted-signer" ? tone.gold("⚠ unknown signer") :
+      sig === "bad-signature" ? paint("✗ bad signature", palette.magenta) :
+      dim(tone.ash("· unsigned"));
+    out.push(`   ${intact && sig === "signed" ? mark.signed : sig === "unsigned" ? mark.dot : paint("!", palette.magenta)} ${tone.cream(s.name)}  ${badge}`);
+    out.push(`     ${dim(tone.ash(s.description))} ${s.signer ? dim(tone.ash(`· ${s.signer}`)) : ""}`);
   }
   out.push("");
   out.push(`   ${eyebrow(`Proposed · ${proposed.length} · awaiting your sign-off`)}`);

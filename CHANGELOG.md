@@ -6,6 +6,11 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Signed-skill provenance (Ed25519).** On first run Mandolin mints a keypair — your identity.
+  Promoting a skill signs its body; `mando skills` shows `✦ signed` / `⚠ unknown signer` /
+  `✗ tampered`. Exchange public keys (`mando identity export` / `trust`) to share instincts that
+  can't be forged. Private key is mode-0600, gitignored, never leaves the machine. Real crypto via
+  `node:crypto`, zero deps. New `mando identity` command.
 - **Command scanning on `exec`.** The same scanner that quarantines poisoned skills now inspects
   every shell command. An `exec` grant covers ordinary commands, but a *dangerous* one (`rm -rf`,
   `sudo`, `curl … | sh`, reverse shells, credential access, history-wiping) always falls back to

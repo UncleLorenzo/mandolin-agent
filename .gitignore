@@ -7,6 +7,10 @@ dist/
 .demo-home/
 .smoke/
 
+# never commit a private signing key (it lives in ~/.mandolin/identity/, but guard anyway)
+*key.pem
+identity/key.pem
+
 # zero runtime deps — the lockfile only pins dev typecheck tooling, resolved fresh on install
 package-lock.json
 

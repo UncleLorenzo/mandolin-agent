@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-30%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-34%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -143,6 +143,15 @@ instinct you teach Mandolin still reads in Claude Code, Cursor, or Codex). New o
 `proposed/`. They do nothing until you `mando promote` them into `trusted/`. Promotion records
 a digest and writes a line to `ledger.md` — your audit trail of what you trusted, and when.
 
+**Signed provenance** — `mando identity`
+A digest tells you *if* a skill changed; a signature tells you *who* vouched for it. On first run
+Mandolin mints an **Ed25519** keypair — your identity. Promoting a skill signs its body with your
+private key (which never leaves `~/.mandolin/identity/`). `mando skills` then shows each trusted
+instinct as `✦ signed`, `⚠ unknown signer`, or `✗ tampered`. Share your public key
+(`mando identity export`) and trust a teammate's (`mando identity trust their.pub`) and you can
+exchange instincts that are **cryptographically impossible to forge** — a chain of trust, not a
+hub you have to take on faith. Real crypto, built into `node:crypto`, zero dependencies.
+
 **Import the whole ecosystem — safely** — `mando import <url|file>`
 `SKILL.md` is an open standard, so Mandolin runs skills written for Hermes, Claude Code, or
 Cursor — pull any of them in by URL or path. The difference is what happens on arrival.
@@ -231,7 +240,8 @@ Deliberately small. Depth over breadth.
 | `mando chat [msg]` | talk to it — operates from your Signature |
 | `mando signature` | read the compounding model of you |
 | `mando recall <query>` | ask your memory — ranked by meaning, not grep |
-| `mando skills` | trusted instincts + what's proposed |
+| `mando skills` | trusted instincts (with signature status) + proposed |
+| `mando identity` | your Ed25519 signing key + trusted signers |
 | `mando import <url\|file>` | pull in any ecosystem skill — scanned, quarantined |
 | `mando promote <name>` | sign off — make a proposed instinct trusted |
 | `mando grant <cap>` | let it act unprompted (write/exec/network) |

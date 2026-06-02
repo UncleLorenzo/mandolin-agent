@@ -45,6 +45,7 @@ src/
     scan.ts           # the quarantine scanner for imported skills
     tools.ts          # the capability gate: read/write/shell/fetch + the actions.md audit log
     scope.ts          # per-path write scoping — a grant can't touch secrets or wander off-project
+    identity.ts       # Ed25519 identity: sign promoted skills, verify signatures, trusted keys
     provider.ts       # model-agnostic registry (10 providers), all OpenAI-compatible but two
     agent.ts          # the live loop: assemble the system prompt, run tools through the gate
     reflect.ts        # the closed loop: a session → Signature deltas + a proposed instinct

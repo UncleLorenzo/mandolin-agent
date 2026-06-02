@@ -15,6 +15,7 @@ import { createHash } from "node:crypto";
 import { paths } from "../home.ts";
 import { scan } from "./scan.ts";
 import type { Severity } from "./scan.ts";
+import { signMessage, verifyMessage, myFingerprint, resolveKey, hasIdentity } from "./identity.ts";
 
 export type Trust = "proposed" | "trusted";
 
@@ -26,6 +27,8 @@ export type Skill = {
   digest: string;
   promoted?: string;
   scan?: Severity;
+  signer?: string;    // fingerprint of the key that signed this
+  signature?: string; // base64 Ed25519 signature over the body
   body: string;
 };
 
@@ -71,6 +74,8 @@ function frontmatter(s: Omit<Skill, "body">): string {
   ];
   if (s.scan) lines.push(`scan: ${s.scan}`);
   if (s.promoted) lines.push(`promoted: ${s.promoted}`);
+  if (s.signer) lines.push(`signer: ${s.signer}`);
+  if (s.signature) lines.push(`signature: ${s.signature}`);
   lines.push("---", "");
   return lines.join("\n");
 }
@@ -132,7 +137,17 @@ export function promote(slug: string, force = false): Skill {
   const verdict = scan(raw).verdict;
   if (verdict === "dangerous" && !force) throw new DangerousSkillError(slug);
   const promotedAt = new Date().toISOString().slice(0, 10);
-  const meta = { ...skill, trust: "trusted" as Trust, promoted: promotedAt, digest: digest(skill.body), scan: verdict };
+  // Sign the body with your identity — provenance, not just tamper-evidence.
+  const signature = signMessage(skill.body);
+  const meta = {
+    ...skill,
+    trust: "trusted" as Trust,
+    promoted: promotedAt,
+    digest: digest(skill.body),
+    scan: verdict,
+    signer: myFingerprint(),
+    signature,
+  };
   const dir = join(paths.trusted(), slug);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "SKILL.md"), frontmatter(meta) + skill.body, "utf8");
@@ -158,7 +173,8 @@ function appendLedger(s: Omit<Skill, "body">, overrodeDanger = false): void {
   }
   const scanNote = s.scan && s.scan !== "clean" ? ` · scan ${s.scan}` : "";
   const override = overrodeDanger ? ` · ⚠ DANGEROUS, force-promoted` : "";
-  const line = `- **${s.name}** — promoted ${s.promoted} · digest \`${s.digest}\`${scanNote}${override} · from ${s.origin}\n`;
+  const signed = s.signer ? ` · signed ${s.signer}` : "";
+  const line = `- **${s.name}** — promoted ${s.promoted} · digest \`${s.digest}\`${signed}${scanNote}${override} · from ${s.origin}\n`;
   writeFileSync(p, readFileSync(p, "utf8") + line, "utf8");
 }
 
@@ -205,11 +221,27 @@ function parse(raw: string): Skill {
     digest: meta.digest ?? "",
     scan: meta.scan as Severity | undefined,
     promoted: meta.promoted,
+    signer: meta.signer,
+    signature: meta.signature,
     body,
   };
 }
 
-/** Has the trusted copy been tampered with since you signed it? */
+/** Has the trusted copy been tampered with since you signed it? (digest check) */
 export function verify(s: Skill): boolean {
   return s.digest === digest(s.body);
+}
+
+export type SigStatus = "signed" | "untrusted-signer" | "bad-signature" | "unsigned";
+
+/**
+ * Cryptographic verification: is the body signed by a key we trust, and does the
+ * signature hold? Distinguishes "no signature" from "signed by a stranger" from
+ * "signature doesn't match" — so the UI can tell the user exactly what it means.
+ */
+export function verifySignature(s: Skill): SigStatus {
+  if (!s.signature || !s.signer) return "unsigned";
+  const pem = resolveKey(s.signer);
+  if (!pem) return "untrusted-signer";
+  return verifyMessage(s.body, s.signature, pem) ? "signed" : "bad-signature";
 }

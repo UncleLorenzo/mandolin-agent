@@ -22,6 +22,10 @@ export const paths = {
   trusted: () => join(home(), "skills", "trusted"),
   ledger: () => join(home(), "ledger.md"),
   actions: () => join(home(), "actions.md"),
+  identity: () => join(home(), "identity"),
+  privateKey: () => join(home(), "identity", "key.pem"),
+  publicKey: () => join(home(), "identity", "key.pub"),
+  trustedKeys: () => join(home(), "identity", "trusted-keys.json"),
 };
 
 /** Make sure the whole tree exists. Idempotent. */

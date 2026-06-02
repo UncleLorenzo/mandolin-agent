@@ -25,6 +25,8 @@ import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
 import { classifyWrite } from "../src/core/scope.ts";
+import { verifySignature } from "../src/core/skills.ts";
+import { ensureIdentity, signMessage, verifyMessage, myFingerprint, publicKeyPem } from "../src/core/identity.ts";
 
 ensureHome();
 
@@ -199,6 +201,39 @@ test("forget: a term that doesn't exist removes nothing", () => {
   const { removed, files } = forget("this-phrase-was-never-stored-xyz");
   assert.equal(removed, 0);
   assert.equal(files, 0);
+});
+
+// --- signed provenance: Ed25519 ---------------------------------------------
+
+test("identity: sign/verify roundtrip, and tamper is caught", () => {
+  ensureIdentity();
+  const pem = publicKeyPem();
+  const sig = signMessage("the skill body");
+  assert.ok(verifyMessage("the skill body", sig, pem), "good signature verifies");
+  assert.ok(!verifyMessage("the skill body TAMPERED", sig, pem), "tampered body fails");
+  assert.ok(myFingerprint().length >= 12, "fingerprint is stable and non-trivial");
+});
+
+test("skills: a promoted skill is signed and verifies as 'signed'", () => {
+  const slug = propose({ name: "Signed instinct", description: "d", whenToUse: "w", procedure: ["a", "b"], origin: "test" });
+  const s = promote(slug);
+  assert.ok(s.signature, "promotion attaches a signature");
+  assert.equal(s.signer, myFingerprint(), "signed by your identity");
+  assert.equal(verifySignature(s), "signed", "fresh promotion verifies");
+});
+
+test("skills: tampering with a signed body breaks verification", () => {
+  const slug = propose({ name: "Tamper target", description: "d", whenToUse: "w", procedure: ["x"], origin: "test" });
+  const s = promote(slug);
+  assert.equal(verifySignature(s), "signed");
+  assert.equal(verifySignature({ ...s, body: s.body + "\nmalicious addition" }), "bad-signature");
+});
+
+test("skills: a signature from an unknown signer is flagged, not trusted", () => {
+  const slug = propose({ name: "Stranger skill", description: "d", whenToUse: "w", procedure: ["x"], origin: "test" });
+  const s = promote(slug);
+  // simulate a skill claiming a signer fingerprint we don't hold a key for
+  assert.equal(verifySignature({ ...s, signer: "deadbeefdeadbeef" }), "untrusted-signer");
 });
 
 // --- exec arg-scoping: a grant is not a licence to wreck the box ------------
