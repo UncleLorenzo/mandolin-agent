@@ -6,6 +6,10 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **In-chat slash-commands.** Inside `mando chat`: `/help`, `/model [name]` (swap models
+  mid-conversation), `/reset` (clear context, keep the Signature), `/signature`, `/skills`,
+  `/quit`. They run locally and never hit the API; unknown commands show a hint instead of being
+  sent to the model.
 - **First-run onboarding.** On a fresh, interactive `mando init`, a 60-second four-question
   interview seeds the Signature (Voice / Standards / Audience / Context) so the agent sounds like
   you from session one. Every question is skippable (Enter), Ctrl-C bails out of the interview

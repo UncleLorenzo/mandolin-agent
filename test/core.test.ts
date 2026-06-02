@@ -26,6 +26,7 @@ import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
 import { classifyWrite } from "../src/core/scope.ts";
 import { shouldOnboard, onboardRecap } from "../src/commands/onboard.ts";
+import { slashCommand } from "../src/commands/chat.ts";
 import { resilientFetch, isTransientStatus, HttpError, AbortError } from "../src/core/net.ts";
 import { streamComplete } from "../src/core/provider.ts";
 import { verifySignature } from "../src/core/skills.ts";
@@ -462,6 +463,19 @@ test("gateway: remote approver honors a pre-granted capability", async () => {
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
   setCapability("network", false);
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("chat: /reset clears history, /model switches, unknown returns false", () => {
+  const history = [{ role: "user" as const, content: "a" }, { role: "assistant" as const, content: "b" }];
+  assert.equal(slashCommand("/reset", history), true);
+  assert.equal(history.length, 0, "/reset empties the conversation");
+
+  assert.equal(slashCommand("/model claude-opus-4-8", history), true);
+  assert.equal(getConfig().model, "claude-opus-4-8", "/model switches the model");
+  setConfig({ model: "claude-sonnet-4-6" }); // restore
+
+  assert.equal(slashCommand("/help", history), true);
+  assert.equal(slashCommand("/bogus", history), false, "unknown command is not handled");
 });
 
 test("onboard: --quick and non-TTY skip the interview; recap reflects answers", () => {

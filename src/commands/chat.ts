@@ -6,9 +6,11 @@ import { wordmark, rule, frame, tone, dim, mark, eyebrow, palette, paint, gradie
 import { ensureHome, isInitialized } from "../home.ts";
 import { scaffoldSignature, readSignature } from "../core/signature.ts";
 import { newSessionId, openSession, record } from "../core/memory.ts";
-import { isLive } from "../core/provider.ts";
+import { isLive, getConfig, setConfig } from "../core/provider.ts";
 import { respondStream } from "../core/agent.ts";
 import { reflect } from "../core/reflect.ts";
+import { signatureDepth } from "../core/signature.ts";
+import { list } from "../core/skills.ts";
 import type { Message } from "../core/provider.ts";
 
 function offlineNotice(): void {
@@ -53,7 +55,7 @@ export async function chat(args: string[]): Promise<void> {
   // Interactive REPL.
   process.stdout.write(
     `\n   ${wordmark()} ${dim(tone.ash("· live"))}\n   ${rule(46)}\n` +
-    `   ${eyebrow("operating from your Signature · /quit to end the session")}\n\n`
+    `   ${eyebrow("operating from your Signature · /help for commands · /quit to end")}\n\n`
   );
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   rl.setPrompt(`   ${tone.ash("you")}  `);
@@ -76,6 +78,15 @@ export async function chat(args: string[]): Promise<void> {
     const line = lineRaw.trim();
     if (line === "/quit" || line === "/q") break;
     if (!line) { rl.prompt(); continue; }
+    // Slash-commands run locally, never go to the model.
+    if (line.startsWith("/")) {
+      const handled = slashCommand(line, history);
+      if (handled) { rl.prompt(); continue; }
+      // unknown slash → fall through is wrong; show hint and re-prompt
+      process.stdout.write(`   ${dim(tone.ash(`unknown command — try `))}${tone.teal("/help")}\n\n`);
+      rl.prompt();
+      continue;
+    }
     record(id, { role: "you", text: line });
     history.push({ role: "user", content: line });
     streaming = new AbortController();
@@ -123,4 +134,56 @@ async function closeOut(id: string): Promise<void> {
     process.stdout.write(`   ${dim(tone.ash("nothing new to learn this time"))}\n`);
   }
   process.stdout.write("\n");
+}
+
+/**
+ * Handle an in-REPL slash command. Returns true if it was a known command (so
+ * the loop skips the model). These run locally and never hit the API.
+ * Exported for testing.
+ */
+export function slashCommand(line: string, history: Message[]): boolean {
+  const [cmd, ...rest] = line.slice(1).split(/\s+/);
+  const arg = rest.join(" ").trim();
+  const w = (s: string) => process.stdout.write(s);
+
+  switch (cmd) {
+    case "help": case "?": {
+      const rows: [string, string][] = [
+        ["/model [name]", "show or switch the model mid-chat"],
+        ["/reset", "clear the conversation context (keep the Signature)"],
+        ["/signature", "what the agent knows about you"],
+        ["/skills", "your trusted instincts"],
+        ["/quit", "end the session (also Ctrl-C at the prompt)"],
+      ];
+      w(`\n   ${eyebrow("in-chat commands")}\n`);
+      for (const [c, d] of rows) w(`   ${tone.teal(c.padEnd(16))} ${dim(tone.ash(d))}\n`);
+      w("\n");
+      return true;
+    }
+    case "model": {
+      const cfg = getConfig();
+      if (!arg) { w(`\n   ${dim(tone.ash("model "))}${tone.cream(cfg.model)} ${dim(tone.ash("on "))}${tone.cream(cfg.provider)}\n\n`); return true; }
+      const next = setConfig({ model: arg });
+      w(`\n   ${mark.ok} ${tone.cream("now using ")}${tone.teal(next.model)}\n\n`);
+      return true;
+    }
+    case "reset": case "new": {
+      history.length = 0;
+      w(`\n   ${mark.ok} ${tone.cream("context cleared")} ${dim(tone.ash("— your Signature still applies"))}\n\n`);
+      return true;
+    }
+    case "signature": case "sig": {
+      w(`\n   ${dim(tone.ash(`${signatureDepth()} things known about you · full text: `))}${tone.teal("mando signature")}\n\n`);
+      return true;
+    }
+    case "skills": {
+      const t = list("trusted");
+      w(`\n   ${dim(tone.ash(`${t.length} trusted instinct(s)`))}\n`);
+      for (const s of t.slice(0, 8)) w(`   ${mark.signed} ${tone.cream(s.name)}\n`);
+      w("\n");
+      return true;
+    }
+    default:
+      return false;
+  }
 }
