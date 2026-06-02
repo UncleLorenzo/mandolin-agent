@@ -7,7 +7,7 @@ import { ensureHome, isInitialized } from "../home.ts";
 import { scaffoldSignature, readSignature } from "../core/signature.ts";
 import { newSessionId, openSession, record } from "../core/memory.ts";
 import { isLive } from "../core/provider.ts";
-import { respond } from "../core/agent.ts";
+import { respondStream } from "../core/agent.ts";
 import { reflect } from "../core/reflect.ts";
 import type { Message } from "../core/provider.ts";
 
@@ -42,9 +42,10 @@ export async function chat(args: string[]): Promise<void> {
     const text = args.join(" ");
     record(id, { role: "you", text });
     history.push({ role: "user", content: text });
-    const reply = await respond(history);
+    process.stdout.write(`\n   ${tone.teal("mandolin")}  `);
+    const reply = await respondStream(history, (chunk) => process.stdout.write(tone.cream(chunk)));
+    process.stdout.write("\n\n");
     record(id, { role: "mandolin", text: reply });
-    process.stdout.write(`\n   ${tone.teal("mandolin")}  ${tone.cream(reply)}\n\n`);
     await closeOut(id);
     return;
   }
@@ -65,12 +66,13 @@ export async function chat(args: string[]): Promise<void> {
     record(id, { role: "you", text: line });
     history.push({ role: "user", content: line });
     try {
-      const reply = await respond(history);
+      process.stdout.write(`   ${tone.teal("mandolin")}  `);
+      const reply = await respondStream(history, (chunk) => process.stdout.write(tone.cream(chunk)));
+      process.stdout.write("\n\n");
       record(id, { role: "mandolin", text: reply });
       history.push({ role: "assistant", content: reply });
-      process.stdout.write(`   ${tone.teal("mandolin")}  ${tone.cream(reply)}\n\n`);
     } catch (e) {
-      process.stdout.write(`   ${paint("✗", palette.magenta)} ${tone.cream((e as Error).message)}\n\n`);
+      process.stdout.write(`\n   ${paint("✗", palette.magenta)} ${tone.cream((e as Error).message)}\n\n`);
     }
     rl.prompt();
   }

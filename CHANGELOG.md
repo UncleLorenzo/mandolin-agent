@@ -6,6 +6,12 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Live streaming in `mando chat`.** Replies print token-by-token via SSE (Anthropic +
+  OpenAI-compatible), with a graceful one-shot fallback for non-streaming providers — the chat
+  feels alive instead of frozen.
+- **Resilient network layer** (`src/core/net.ts`). Every model call retries rate limits (429) and
+  transient failures (5xx, dropped sockets) with exponential backoff + jitter, honoring
+  `Retry-After`; permanent errors (401/400) fail fast. A blip mid-task is a hiccup, not a crash.
 - **Expanded scanner ruleset.** The danger scanner (which now guards skill imports, shell
   commands, *and* write targets) gained coverage: raw-disk overwrite (`dd of=/dev/…`), fork bombs,
   `mkfs`/erase, setuid backdoors, `eval $(curl …)`, package installs from untrusted sources,

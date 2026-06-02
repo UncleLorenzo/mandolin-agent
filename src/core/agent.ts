@@ -5,7 +5,7 @@
 // assistant and drift toward you — it starts as you.
 
 import type { Message, RawMessage, ContentBlock } from "./provider.ts";
-import { complete, completeRaw } from "./provider.ts";
+import { complete, completeRaw, streamComplete } from "./provider.ts";
 import { toolSchemas, executeTool, findTool } from "./tools.ts";
 import type { Approver, ToolCall } from "./tools.ts";
 import { readSignature } from "./signature.ts";
@@ -42,6 +42,11 @@ export function buildSystem(): string {
 /** One turn of the live agent (no tools — plain conversation). */
 export async function respond(history: Message[]): Promise<string> {
   return complete(buildSystem(), history, 1024);
+}
+
+/** One turn, streamed token-by-token. Returns the full text when done. */
+export async function respondStream(history: Message[], onToken: (chunk: string) => void): Promise<string> {
+  return streamComplete(buildSystem(), history, onToken, 1024);
 }
 
 export type AgentEvent =

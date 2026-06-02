@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-36%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-42%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -237,7 +237,7 @@ Deliberately small. Depth over breadth.
 | `mando init` | establish your Signature + local home |
 | `mando demo` | watch the loop turn — offline, 20 seconds |
 | `mando act <task>` | put it to work with tools, through the gate |
-| `mando chat [msg]` | talk to it — operates from your Signature |
+| `mando chat [msg]` | talk to it — streams live, operates from your Signature |
 | `mando signature` | read the compounding model of you |
 | `mando recall <query>` | ask your memory — ranked by meaning, not grep |
 | `mando skills` | trusted instincts (with signature status) + proposed |
@@ -273,6 +273,18 @@ mando model list                     # see all providers + which have keys
 ```
 
 Anthropic · OpenAI · Ollama · Google Gemini · Groq · Mistral · DeepSeek · Together · OpenRouter · xAI
+
+---
+
+## Built to actually be used
+
+- **Streams live.** `mando chat` prints the reply token-by-token as the model thinks — no frozen
+  cursor, no wall-of-text dump. (Anthropic + OpenAI-compatible providers; graceful one-shot
+  fallback otherwise.)
+- **Survives the network.** Every model call goes through a resilient layer that retries rate
+  limits (429) and transient blips (5xx, dropped sockets) with exponential backoff + jitter, and
+  honors `Retry-After`. Permanent errors (bad key, bad request) fail fast instead of retrying
+  pointlessly. A 429 mid-task is a hiccup, not a crash.
 
 ---
 

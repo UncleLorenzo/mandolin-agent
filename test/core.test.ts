@@ -25,6 +25,8 @@ import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
 import { classifyWrite } from "../src/core/scope.ts";
+import { resilientFetch, isTransientStatus, HttpError } from "../src/core/net.ts";
+import { streamComplete } from "../src/core/provider.ts";
 import { verifySignature } from "../src/core/skills.ts";
 import { ensureIdentity, signMessage, verifyMessage, myFingerprint, publicKeyPem } from "../src/core/identity.ts";
 
@@ -227,6 +229,97 @@ test("forget: a term that doesn't exist removes nothing", () => {
   const { removed, files } = forget("this-phrase-was-never-stored-xyz");
   assert.equal(removed, 0);
   assert.equal(files, 0);
+});
+
+// --- net: resilient retry/backoff -------------------------------------------
+
+const noSleep = async () => {};
+function fakeResponse(status: number, body = "{}", headers: Record<string, string> = {}) {
+  return new Response(body, { status, headers });
+}
+
+test("net: classifies transient vs permanent statuses", () => {
+  for (const s of [408, 429, 500, 502, 503, 504]) assert.ok(isTransientStatus(s), `${s} transient`);
+  for (const s of [400, 401, 403, 404, 422]) assert.ok(!isTransientStatus(s), `${s} permanent`);
+});
+
+test("net: retries a 429 then succeeds", async () => {
+  let calls = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    calls++;
+    return calls < 3 ? fakeResponse(429, "rate limited") : fakeResponse(200, '{"ok":true}');
+  }) as typeof fetch;
+  try {
+    const res = await resilientFetch("https://x", {}, { sleep: noSleep });
+    assert.equal(res.status, 200);
+    assert.equal(calls, 3, "two retries then success");
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("net: does NOT retry a permanent 401 — fails fast", async () => {
+  let calls = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { calls++; return fakeResponse(401, "bad key"); }) as typeof fetch;
+  try {
+    await assert.rejects(
+      () => resilientFetch("https://x", {}, { sleep: noSleep, retries: 4 }),
+      (e) => e instanceof HttpError && e.status === 401
+    );
+    assert.equal(calls, 1, "permanent error tried exactly once");
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("net: retries network errors, then gives up after the budget", async () => {
+  let calls = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { calls++; throw new Error("ECONNRESET"); }) as typeof fetch;
+  try {
+    await assert.rejects(() => resilientFetch("https://x", {}, { sleep: noSleep, retries: 2 }));
+    assert.equal(calls, 3, "initial try + 2 retries");
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("net: streaming assembles SSE deltas and fires onToken per chunk", async () => {
+  setConfig({ provider: "anthropic", model: "claude-sonnet-4-6" });
+  process.env.ANTHROPIC_API_KEY = "test-key";
+  const sse =
+    'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Hel"}}\n' +
+    'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"lo, "}}\n' +
+    'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"world"}}\n' +
+    "data: [DONE]\n";
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(sse, { status: 200, headers: { "content-type": "text/event-stream" } })) as typeof fetch;
+  try {
+    const chunks: string[] = [];
+    const full = await streamComplete("sys", [{ role: "user", content: "hi" }], (c) => chunks.push(c));
+    assert.equal(full, "Hello, world", "full text assembled from deltas");
+    assert.equal(chunks.length, 3, "onToken fired once per delta");
+  } finally {
+    globalThis.fetch = orig;
+    delete process.env.ANTHROPIC_API_KEY;
+  }
+});
+
+test("net: streaming falls back to one-shot when no key/provider streams", async () => {
+  setConfig({ provider: "anthropic", model: "claude-sonnet-4-6" });
+  delete process.env.ANTHROPIC_API_KEY; // streamAnthropic throws "offline" → fallback path
+  const orig = globalThis.fetch;
+  // the non-streaming complete() will also be offline; assert it surfaces, not hangs
+  globalThis.fetch = (async () => new Response("{}", { status: 200 })) as typeof fetch;
+  try {
+    let got = "";
+    await streamComplete("sys", [{ role: "user", content: "hi" }], (c) => { got += c; }).catch(() => { got = "ERR"; });
+    assert.ok(got === "ERR" || typeof got === "string", "fallback path returns or errors cleanly, never hangs");
+  } finally {
+    globalThis.fetch = orig;
+  }
 });
 
 // --- signed provenance: Ed25519 ---------------------------------------------

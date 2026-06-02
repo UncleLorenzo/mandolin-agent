@@ -3,6 +3,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { paths } from "../home.ts";
+import { resilientFetch } from "./net.ts";
 
 export type Provider =
   | "anthropic"
@@ -103,6 +104,98 @@ export async function complete(system: string, messages: Message[], maxTokens = 
   throw new Error(`Unknown provider: ${cfg.provider}`);
 }
 
+/**
+ * Streaming completion. Calls `onToken` with each text chunk as it arrives, and
+ * returns the full text at the end. Anthropic + OpenAI-compatible providers
+ * stream via SSE; anything else (or any failure) falls back to a single
+ * non-streaming call so callers always get an answer.
+ */
+export async function streamComplete(
+  system: string,
+  messages: Message[],
+  onToken: (chunk: string) => void,
+  maxTokens = 1024
+): Promise<string> {
+  const cfg = getConfig();
+  try {
+    if (cfg.provider === "anthropic") return await streamAnthropic(cfg, system, messages, onToken, maxTokens);
+    if (PROVIDERS[cfg.provider]?.openaiCompatible) return await streamOpenAI(cfg, system, messages, onToken, maxTokens);
+  } catch {
+    /* fall through to non-streaming */
+  }
+  const full = await complete(system, messages, maxTokens);
+  onToken(full); // deliver in one shot so the caller's render path is uniform
+  return full;
+}
+
+/** Iterate Server-Sent-Event `data:` payloads from a Response body stream. */
+async function* sseLines(res: Response): AsyncGenerator<string> {
+  const reader = res.body?.getReader();
+  if (!reader) return;
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (line.startsWith("data:")) yield line.slice(5).trim();
+    }
+  }
+}
+
+async function streamAnthropic(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number): Promise<string> {
+  const key = apiKey("anthropic");
+  if (!key) throw new Error("offline");
+  const res = await resilientFetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, messages, stream: true }),
+  });
+  let full = "";
+  for await (const data of sseLines(res)) {
+    if (data === "[DONE]") break;
+    try {
+      const ev = JSON.parse(data);
+      if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+        full += ev.delta.text;
+        onToken(ev.delta.text);
+      }
+    } catch {
+      /* ignore keepalive/non-JSON lines */
+    }
+  }
+  return full;
+}
+
+async function streamOpenAI(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number): Promise<string> {
+  const key = apiKey(cfg.provider);
+  const base = cfg.baseUrl || PROVIDERS[cfg.provider]?.baseUrl || "https://api.openai.com/v1";
+  const res = await resilientFetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${key ?? ""}`, "content-type": "application/json" },
+    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, stream: true, messages: [{ role: "system", content: system }, ...messages] }),
+  });
+  let full = "";
+  for await (const data of sseLines(res)) {
+    if (data === "[DONE]") break;
+    try {
+      const ev = JSON.parse(data);
+      const chunk = ev.choices?.[0]?.delta?.content;
+      if (chunk) {
+        full += chunk;
+        onToken(chunk);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return full;
+}
+
 export type ContentBlock =
   | { type: "text"; text: string }
   | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
@@ -123,12 +216,11 @@ export async function completeRaw(system: string, messages: RawMessage[], tools:
   if (cfg.provider !== "anthropic") throw new Error(`the tool-use loop currently supports anthropic only (configured: ${cfg.provider})`);
   const key = apiKey("anthropic");
   if (!key) throw new Error("offline");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await resilientFetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, tools, messages }),
   });
-  if (!res.ok) throw new Error(`anthropic ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as { content: ContentBlock[]; stop_reason: string };
   const content = data.content ?? [];
   const text = content
@@ -144,7 +236,7 @@ export async function completeRaw(system: string, messages: RawMessage[], tools:
 async function anthropic(cfg: Config, system: string, messages: Message[], maxTokens: number): Promise<string> {
   const key = apiKey("anthropic");
   if (!key) throw new Error("offline");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await resilientFetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": key,
@@ -153,7 +245,6 @@ async function anthropic(cfg: Config, system: string, messages: Message[], maxTo
     },
     body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, messages }),
   });
-  if (!res.ok) throw new Error(`anthropic ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as { content: { type: string; text?: string }[] };
   return data.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
 }
@@ -161,7 +252,7 @@ async function anthropic(cfg: Config, system: string, messages: Message[], maxTo
 async function openaiCompatible(cfg: Config, system: string, messages: Message[], maxTokens: number): Promise<string> {
   const key = apiKey(cfg.provider);
   const base = cfg.baseUrl || PROVIDERS[cfg.provider]?.baseUrl || "https://api.openai.com/v1";
-  const res = await fetch(`${base}/chat/completions`, {
+  const res = await resilientFetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${key ?? ""}`, "content-type": "application/json" },
     body: JSON.stringify({
@@ -170,14 +261,13 @@ async function openaiCompatible(cfg: Config, system: string, messages: Message[]
       messages: [{ role: "system", content: system }, ...messages],
     }),
   });
-  if (!res.ok) throw new Error(`openai ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as { choices: { message: { content: string } }[] };
   return data.choices[0]?.message?.content ?? "";
 }
 
 async function ollama(cfg: Config, system: string, messages: Message[], _maxTokens: number): Promise<string> {
   const base = cfg.baseUrl || "http://localhost:11434";
-  const res = await fetch(`${base}/api/chat`, {
+  const res = await resilientFetch(`${base}/api/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -186,7 +276,6 @@ async function ollama(cfg: Config, system: string, messages: Message[], _maxToke
       messages: [{ role: "system", content: system }, ...messages],
     }),
   });
-  if (!res.ok) throw new Error(`ollama ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as { message?: { content: string } };
   return data.message?.content ?? "";
 }
