@@ -14,6 +14,7 @@ import { homedir } from "node:os";
 import { paths } from "../home.ts";
 import { isGranted } from "./provider.ts";
 import { classifyWrite } from "./scope.ts";
+import { scan } from "./scan.ts";
 
 export type Risk = "read" | "write" | "exec" | "network";
 export type Decision = "allow" | "ask" | "deny";
@@ -132,7 +133,20 @@ export function decide(tool: Tool, input: Record<string, unknown>): { decision: 
       : { decision: "ask", why: "write action — not granted" };
   }
 
-  const cap = tool.risk; // "exec" | "network" map 1:1 to capabilities
+  // Exec gets command-scanning on top of the grant: the same scanner that
+  // quarantines poisoned skills inspects the shell command. A grant covers
+  // ordinary commands, but a DANGEROUS one (rm -rf, sudo, curl|sh, key/exfil…)
+  // always falls back to asking — a grant is never a licence to wreck the box.
+  if (tool.risk === "exec") {
+    const cmd = String(input.command ?? "");
+    const verdict = scan(cmd).verdict;
+    if (verdict === "dangerous") return { decision: "ask", why: "dangerous command — always asks, grant or not" };
+    return isGranted("exec")
+      ? { decision: "allow", why: "exec is granted" }
+      : { decision: "ask", why: "exec action — not granted" };
+  }
+
+  const cap = tool.risk; // "network" maps 1:1 to a capability
   if (isGranted(cap)) return { decision: "allow", why: `${cap} is a standing grant` };
   return { decision: "ask", why: `${cap} action — not granted` };
 }

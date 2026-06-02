@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-28%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-30%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -182,12 +182,17 @@ one you stop — is written to `actions.md`. Run `mando act` with no model key t
 work offline: it really runs the harmless command, and really refuses the destructive one.
 
 **A grant is not a blank cheque** — `mando scope`
-Granting `write` lets the agent edit *your project* — it does **not** let it wander your whole
-home. Writes only auto-proceed inside your write scope (the project by default), and a short list
-of high-value targets — `.ssh`, `.env`, shell startup files, `.aws`, `.gnupg`, `.git` internals,
-launch agents — **always** asks first, grant or no grant. So a poisoned skill or an injected
-instruction can't quietly drop a backdoor in `~/.ssh/authorized_keys` or rewrite your `~/.zshrc`.
-(Most agents treat a write grant as all-or-nothing over your entire home. This one doesn't.)
+Granting a capability is scoped, not total — defense-in-depth across every risk class:
+
+- **Writes** only auto-proceed inside your write scope (the project by default). High-value
+  targets — `.ssh`, `.env`, shell startup files, `.aws`, `.gnupg`, `.git` internals, launch
+  agents — **always** ask first, grant or no grant. No quiet backdoor in `~/.ssh/authorized_keys`.
+- **Shell commands** are scanned: an `exec` grant covers ordinary commands, but a *dangerous* one
+  (`rm -rf`, `sudo`, `curl … | sh`, reverse shells, credential access) **always** asks. A grant is
+  never a licence to wreck the box.
+
+Most agents treat a grant as all-or-nothing over your whole machine. This one doesn't —
+verified end-to-end (a granted `rm -rf` and a granted write to `~/.ssh/` are both refused).
 
 **Living on a server — without handing over the keys** — `mando gateway`
 Run it on a $5 VPS and reach it from Telegram, so the agent works while you're away. Here's the

@@ -6,6 +6,11 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Command scanning on `exec`.** The same scanner that quarantines poisoned skills now inspects
+  every shell command. An `exec` grant covers ordinary commands, but a *dangerous* one (`rm -rf`,
+  `sudo`, `curl … | sh`, reverse shells, credential access, history-wiping) always falls back to
+  asking — grant or not. Verified: a granted `rm -rf` is denied. The trust model is now
+  defense-in-depth across read, write, *and* exec.
 - **Per-path write scoping** (`mando scope`). A `write` grant no longer lets the agent write
   anywhere in your home. Writes only auto-proceed inside your write scope (the project by
   default); a deny-list of high-value targets — `.ssh`, `.env`, shell rc, `.aws`, `.gnupg`,

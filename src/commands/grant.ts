@@ -9,8 +9,8 @@ import type { Capability } from "../core/provider.ts";
 
 const CAPS: Capability[] = ["write", "exec", "network"];
 const BLURB: Record<Capability, string> = {
-  write: "create and overwrite files without asking each time",
-  exec: "run shell commands without asking each time",
+  write: "write files without asking — but only in scope, never your secrets",
+  exec: "run ordinary shell commands without asking — dangerous ones still ask",
   network: "fetch URLs without asking each time",
 };
 
