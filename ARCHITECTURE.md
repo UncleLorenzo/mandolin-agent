@@ -15,11 +15,26 @@ instead, and gates them both:
 
 Everything below serves those two ideas.
 
+## Build & run
+
+Two modes, one source of truth:
+
+- **Dev:** `npm run dev -- <cmd>` runs the TypeScript directly on Node ≥ 22.6 (native type
+  stripping, no build step) — fast iteration.
+- **Ship:** `npm run build` uses esbuild to bundle `src/cli.ts` and everything it imports into a
+  single, dependency-free `dist/mando.mjs` (~90KB) with the shebang preserved. `npm link` /
+  `npm install -g` puts that on your PATH as `mando`. `prepack` runs the build automatically, and
+  a `files` allowlist means a published package is just the binary + docs.
+
+`mando doctor` is the preflight: Node version, writable home, valid config, provider/key,
+Signature, and trust posture — each with a fix if it's wrong. Every command runs behind a
+top-level handler, so failures are clean one-liners, never stack traces.
+
 ## Layout
 
 ```
 src/
-  cli.ts              # the command router — one small switch, no framework
+  cli.ts              # the command router — one small switch behind a graceful error handler
   brand.ts            # zero-dep truecolor ANSI: the house palette in your terminal
   home.ts             # where state lives (~/.mandolin), all paths in one place
   core/

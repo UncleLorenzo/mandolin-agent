@@ -6,6 +6,21 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Installable build.** `npm run build` bundles the whole agent into a single ~90KB
+  dependency-free `dist/mando.mjs`; `npm link` (or `npm install -g`) puts a real `mando` command
+  on your PATH. `prepack` builds automatically, and a `files` allowlist keeps the published
+  package lean (binary + docs only — no source, no tests).
+- **`mando doctor`** — a real preflight: checks the Node version, a writable home, valid config,
+  the model provider/key, the Signature, and your trust posture (standing grants) — with a clear
+  fix for anything that's wrong. (Previously an alias of `status`.)
+- **Graceful failure.** Every command runs behind a top-level handler — unexpected errors render
+  as a clean one-line message with a hint, never a raw stack trace. A corrupt `config.json` falls
+  back to defaults instead of crashing.
+
+### Changed
+- `dev`/`build`/`check`/`prepack` npm scripts; `bin` now points at the built binary.
+
+### Added (earlier in this cycle)
 - **`mando gateway`** — the always-on gateway: run on a server, reach the agent over Telegram
   (zero-dep, HTTPS long-poll). Two safety guarantees baked in: **pairing** (only approved chat IDs
   may talk to it; first contact gets a one-time code you approve from the CLI) and **remote-is-

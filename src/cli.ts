@@ -14,8 +14,9 @@ import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
 import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
 import { gatewayCmd, pairCmd } from "./commands/gateway.ts";
+import { doctor } from "./commands/doctor.ts";
 import { modelCmd } from "./commands/model.ts";
-import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette } from "./brand.ts";
+import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette, paint } from "./brand.ts";
 import { readSignature } from "./core/signature.ts";
 import { reflect } from "./core/reflect.ts";
 import { listSessions } from "./core/memory.ts";
@@ -24,6 +25,9 @@ const VERSION = "0.1.0";
 
 const [cmd, ...rest] = process.argv.slice(2);
 
+await dispatch().catch(fail);
+
+async function dispatch(): Promise<void> {
 switch (cmd) {
   case undefined:
     hero();
@@ -84,8 +88,10 @@ switch (cmd) {
     modelCmd(rest);
     break;
   case "status":
-  case "doctor":
     showStatus();
+    break;
+  case "doctor":
+    doctor();
     break;
   case "ledger":
     showLedger();
@@ -103,6 +109,18 @@ switch (cmd) {
   default:
     process.stdout.write(`\n   ${tone.cream(`Unknown command: ${cmd}`)}\n`);
     help();
+}
+}
+
+/** Turn any uncaught error into a clean message — never a raw stack trace. */
+function fail(err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  const hint =
+    /offline|ANTHROPIC_API_KEY|no embeddings key/i.test(msg) ? "  (run `mando doctor` to check your setup)" :
+    /ENOENT|EACCES|permission/i.test(msg) ? "  (run `mando doctor` — looks like a file/permission issue)" :
+    "";
+  process.stderr.write(`\n   ${paint("✗", palette.magenta)} ${tone.cream(msg)}${dim(tone.ash(hint))}\n\n`);
+  process.exitCode = 1;
 }
 
 async function reflectLatest(): Promise<void> {

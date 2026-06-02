@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-23%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-24%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -49,7 +49,8 @@ believes got there without your consent, and you can read every line of it.
 ```bash
 git clone https://github.com/UncleLorenzo/mandolin-agent
 cd mandolin-agent
-node src/cli.ts demo
+npm install        # dev tooling only — the agent has zero runtime deps
+npm run demo       # watch the loop turn, offline
 ```
 
 ```
@@ -82,16 +83,29 @@ otherwise wait days to watch — compressed into one rehearsal.
 
 ---
 
+## Install
+
+Mandolin builds to a single ~90KB file with **zero runtime dependencies**. Requires **Node ≥ 22.6**.
+
+```bash
+git clone https://github.com/UncleLorenzo/mandolin-agent
+cd mandolin-agent
+npm install        # dev tooling (typecheck, tests, the bundler)
+npm run build      # → dist/mando.mjs
+npm link           # puts `mando` on your PATH
+mando doctor       # confirm the install is healthy
+```
+
+During development you can skip the build and run straight off the source —
+`npm run dev -- <command>` (native TypeScript, no build step).
+
 ## Quickstart (live)
 
 ```bash
-export ANTHROPIC_API_KEY=sk-...      # or any model — see "Model-agnostic" below
-node src/cli.ts init                 # establish your Signature + local home
-node src/cli.ts chat                 # put it to work; it operates from your Signature
+export ANTHROPIC_API_KEY=sk-...   # or any of 10 providers — see "Model-agnostic"
+mando init                        # establish your Signature + local home
+mando chat                        # put it to work; it operates from your Signature
 ```
-
-> v0.1 runs straight off the source on **Node ≥ 22.6** (native TypeScript, no build step).
-> `npm link` to get the `mando` command globally.
 
 ---
 

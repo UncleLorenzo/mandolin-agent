@@ -20,6 +20,9 @@ import { exportBundle, findForgettable, forget } from "../src/core/sovereignty.t
 import { recordFact } from "../src/core/memory.ts";
 import { remoteApprover } from "../src/core/gateway.ts";
 import { requestPairing, approve, isApproved, revokePairing } from "../src/core/pairing.ts";
+import { getConfig, setConfig } from "../src/core/provider.ts";
+import { writeFileSync } from "node:fs";
+import { paths } from "../src/home.ts";
 
 ensureHome();
 
@@ -215,6 +218,14 @@ test("gateway: remote approver honors a pre-granted capability", async () => {
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
   setCapability("network", false);
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("robustness: a corrupt config.json falls back to defaults, never throws", () => {
+  writeFileSync(paths.config(), "{ this is not valid json !!", "utf8");
+  const cfg = getConfig(); // must not throw
+  assert.equal(cfg.provider, "anthropic", "should fall back to the default provider");
+  assert.ok(cfg.model, "should still have a model");
+  setConfig({ provider: "anthropic", model: "claude-sonnet-4-6" }); // repair for later tests
 });
 
 test("pairing: an unknown chat is not approved until you approve its code", () => {

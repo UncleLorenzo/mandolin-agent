@@ -4,13 +4,23 @@
   "description": "An agent that learns you. Self-hosted, model-agnostic, and it earns every instinct before it acts.",
   "type": "module",
   "bin": {
-    "mando": "./src/cli.ts"
+    "mando": "./dist/mando.mjs"
   },
+  "files": [
+    "dist/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
-    "mando": "node src/cli.ts",
+    "dev": "node src/cli.ts",
     "demo": "node src/cli.ts demo",
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/mando.mjs && chmod +x dist/mando.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/core.test.ts"
+    "test": "node --test test/core.test.ts",
+    "check": "npm run typecheck && npm test",
+    "prepack": "npm run build"
   },
   "engines": {
     "node": ">=22.6"
@@ -29,6 +39,7 @@
   "homepage": "https://gomandolin.com",
   "devDependencies": {
     "@types/node": "^22.19.19",
+    "esbuild": "^0.28.0",
     "typescript": "^5.7.0"
   }
 }
