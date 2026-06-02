@@ -6,6 +6,11 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Per-path write scoping** (`mando scope`). A `write` grant no longer lets the agent write
+  anywhere in your home. Writes only auto-proceed inside your write scope (the project by
+  default); a deny-list of high-value targets — `.ssh`, `.env`, shell rc, `.aws`, `.gnupg`,
+  `.git` internals, launch agents — **always** asks, grant or not. Verified: a granted write to
+  `~/.ssh/authorized_keys` is denied and nothing hits disk. `mando scope add/remove/check`.
 - **Installable build.** `npm run build` bundles the whole agent into a single ~90KB
   dependency-free `dist/mando.mjs`; `npm link` (or `npm install -g`) puts a real `mando` command
   on your PATH. `prepack` builds automatically, and a `files` allowlist keeps the published

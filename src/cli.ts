@@ -12,6 +12,7 @@ import { recallCmd } from "./commands/recall.ts";
 import { showSignature, showSkills, showStatus, showLedger } from "./commands/inspect.ts";
 import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
+import { scopeCmd } from "./commands/scope.ts";
 import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
 import { gatewayCmd, pairCmd } from "./commands/gateway.ts";
 import { doctor } from "./commands/doctor.ts";
@@ -68,6 +69,9 @@ switch (cmd) {
     break;
   case "revoke":
     revoke(rest[0]);
+    break;
+  case "scope":
+    scopeCmd(rest);
     break;
   case "export":
     exportCmd(rest);
@@ -150,6 +154,7 @@ function help(): void {
     ["import <url|file>", "pull in any ecosystem skill — scanned, quarantined"],
     ["promote <name>", "sign off — make a proposed instinct trusted"],
     ["grant <cap>", "let it act unprompted (write/exec/network)"],
+    ["scope", "where a granted write may go (never your secrets)"],
     ["reflect", "distill the latest session by hand"],
     ["model [name]", "swap the model / provider"],
     ["export [file]", "your whole self in one portable file"],

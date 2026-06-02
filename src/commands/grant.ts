@@ -46,6 +46,7 @@ function showCaps(mode: string): void {
     out.push(`   ${badge}  ${tone.cream(c.padEnd(8))} ${dim(tone.ash(BLURB[c]))}`);
   }
   out.push("", `   ${eyebrow("reads inside your project are always free")}`);
+  out.push(`   ${dim(tone.ash("even when "))}${tone.cream("write")}${dim(tone.ash(" is granted, writes stay in scope and never touch secrets — "))}${tone.teal("mando scope")}`);
   out.push(`   ${tone.teal(`mando ${mode} <write|exec|network>`)}`, "");
   process.stdout.write(out.join("\n") + "\n");
 }

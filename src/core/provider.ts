@@ -42,6 +42,7 @@ export type Config = {
   model: string;
   baseUrl?: string;
   capabilities?: Partial<Record<Capability, boolean>>;
+  writeScope?: string[]; // extra roots (beyond cwd) a granted write may touch
 };
 
 const DEFAULT: Config = { provider: "anthropic", model: "claude-sonnet-4-6", capabilities: {} };

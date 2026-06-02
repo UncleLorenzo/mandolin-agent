@@ -12,6 +12,11 @@ aim to acknowledge within a few days.
 - **Capability gate.** Tools are classed by risk. Reads inside your project run freely;
   `write`, `exec`, and `network` are denied by default and require either a standing grant
   (`mando grant <cap>`) or an in-the-moment approval. There is no "yolo" mode.
+- **Per-path write scoping.** A `write` grant is not a blank cheque. Writes only auto-proceed
+  inside your write scope (`mando scope`); paths outside it fall back to asking, and a deny-list
+  of high-value targets (`.ssh`, `.env`, shell rc, `.aws`, `.gnupg`, `.git` internals, launch
+  agents) **always** asks — no standing grant can touch them. This blunts skill-poisoning and
+  prompt-injection that aim to plant a backdoor or exfiltrate keys.
 - **Audit log.** Every action — allowed *or* denied — is appended to `~/.mandolin/actions.md`.
 - **No silent learning.** Distilled skills land in `skills/proposed/` and do nothing until
   you `mando promote` them. Promotion records a content digest; a trusted skill whose body
@@ -23,10 +28,12 @@ aim to acknowledge within a few days.
 - `.env` is gitignored. Your `~/.mandolin` home is yours — commit it to a *private* repo if
   you want history; never a public one.
 
-## Known limitations (v0.1 — be aware)
+## Known limitations (be aware)
 - A standing `exec` grant is powerful: once granted, the agent can run shell commands
-  without prompting. Grant deliberately; revoke with `mando revoke exec`.
-- Write access is gated by capability, not yet scoped per-path (on the roadmap).
+  without prompting (shell commands are not path-scoped the way writes are). Grant deliberately;
+  revoke with `mando revoke exec`.
+- The skill scanner (`mando import`) is a heuristic tripwire, not a sandbox — it makes danger
+  visible; your promotion is the real gate.
 - A proposed skill is unreviewed input until you read and promote it. Treat it as such.
 
 ## Scope

@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { paths } from "../home.ts";
 import { isGranted } from "./provider.ts";
+import { classifyWrite } from "./scope.ts";
 
 export type Risk = "read" | "write" | "exec" | "network";
 export type Decision = "allow" | "ask" | "deny";
@@ -119,7 +120,19 @@ export function decide(tool: Tool, input: Record<string, unknown>): { decision: 
       ? { decision: "allow", why: "read inside your project" }
       : { decision: "ask", why: `read outside your project (${resolve(p)})` };
   }
-  const cap = tool.risk; // "write" | "exec" | "network" map 1:1 to capabilities
+
+  // Writes get per-path scoping on top of the capability grant: a grant lets the
+  // agent edit your project, never silently touch secrets or wander off-scope.
+  if (tool.risk === "write") {
+    const v = classifyWrite((input.path as string) ?? ".");
+    if (v.kind === "sensitive") return { decision: "ask", why: `${v.what} — sensitive path, always asks` };
+    if (v.kind === "out-of-scope") return { decision: "ask", why: `outside your write scope (${v.abs})` };
+    return isGranted("write")
+      ? { decision: "allow", why: "write is granted, in scope" }
+      : { decision: "ask", why: "write action — not granted" };
+  }
+
+  const cap = tool.risk; // "exec" | "network" map 1:1 to capabilities
   if (isGranted(cap)) return { decision: "allow", why: `${cap} is a standing grant` };
   return { decision: "ask", why: `${cap} action — not granted` };
 }

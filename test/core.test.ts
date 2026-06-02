@@ -22,7 +22,9 @@ import { remoteApprover } from "../src/core/gateway.ts";
 import { requestPairing, approve, isApproved, revokePairing } from "../src/core/pairing.ts";
 import { getConfig, setConfig } from "../src/core/provider.ts";
 import { writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
+import { classifyWrite } from "../src/core/scope.ts";
 
 ensureHome();
 
@@ -200,6 +202,37 @@ test("forget: a term that doesn't exist removes nothing", () => {
 });
 
 // --- gateway: remote is stricter -------------------------------------------
+
+// --- write scoping: a grant is not a blank cheque ---------------------------
+
+test("scope: a write inside the project is in-scope", () => {
+  const v = classifyWrite(join(process.cwd(), "notes.md"));
+  assert.equal(v.kind, "in-scope");
+});
+
+test("scope: secrets ALWAYS classify as sensitive (grant can't touch them)", () => {
+  for (const p of ["~/.ssh/id_rsa", "~/.aws/credentials", "~/.zshrc", "~/.env", "~/.gnupg/secring"]) {
+    assert.equal(classifyWrite(p).kind, "sensitive", `${p} must be sensitive`);
+  }
+});
+
+test("scope: a path outside the project (and not secret) is out-of-scope", () => {
+  const v = classifyWrite(join(homedir(), "Desktop", "random.txt"));
+  assert.equal(v.kind, "out-of-scope");
+});
+
+test("scope: the write gate denies a granted write to a sensitive path", () => {
+  setCapability("write", true);
+  const wf = findTool("write_file");
+  assert.ok(wf);
+  // sensitive → ask (not allow), even though write is granted
+  assert.equal(decide(wf, { path: join(homedir(), ".ssh", "authorized_keys"), content: "x" }).decision, "ask");
+  // in-scope → allow, because write is granted
+  assert.equal(decide(wf, { path: join(process.cwd(), "ok.txt"), content: "x" }).decision, "allow");
+  // out-of-scope → ask, despite the grant
+  assert.equal(decide(wf, { path: join(homedir(), "Desktop", "x.txt"), content: "x" }).decision, "ask");
+  setCapability("write", false);
+});
 
 test("gateway: remote approver denies gated actions by default", async () => {
   setCapability("exec", false);

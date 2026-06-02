@@ -44,6 +44,7 @@ src/
     skills.ts         # SKILL.md format, the proposed→trusted gate, digests, the ledger
     scan.ts           # the quarantine scanner for imported skills
     tools.ts          # the capability gate: read/write/shell/fetch + the actions.md audit log
+    scope.ts          # per-path write scoping — a grant can't touch secrets or wander off-project
     provider.ts       # model-agnostic registry (10 providers), all OpenAI-compatible but two
     agent.ts          # the live loop: assemble the system prompt, run tools through the gate
     reflect.ts        # the closed loop: a session → Signature deltas + a proposed instinct
@@ -84,8 +85,9 @@ Each decision is appended to `actions.md`.
 
 ## Trust model & limits
 
-See [SECURITY.md](SECURITY.md) for the threat model. Honest current limits: the scanner in
-`scan.ts` is a heuristic tripwire, not a sandbox; write access is gated by capability, not yet
-scoped per-path; and `forget` records the *search term* in the audit receipt (proof of erasure),
-so if the term itself is sensitive you'll want to scrub `actions.md` too. These are documented,
-not hidden — and they're on the roadmap.
+See [SECURITY.md](SECURITY.md) for the threat model. Writes are both capability-gated *and*
+per-path scoped (`scope.ts`): a grant can't reach secrets or wander off-project. Honest remaining
+limits: the scanner in `scan.ts` is a heuristic tripwire, not a sandbox; a standing `exec` grant
+is not path-scoped the way writes are; and `forget` records the *search term* in the audit receipt
+(proof of erasure), so if the term itself is sensitive you'll want to scrub `actions.md` too.
+These are documented, not hidden.
