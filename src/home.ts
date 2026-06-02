@@ -26,6 +26,7 @@ export const paths = {
   privateKey: () => join(home(), "identity", "key.pem"),
   publicKey: () => join(home(), "identity", "key.pub"),
   trustedKeys: () => join(home(), "identity", "trusted-keys.json"),
+  mcp: () => join(home(), "mcp.json"),
 };
 
 /** Make sure the whole tree exists. Idempotent. */

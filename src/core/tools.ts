@@ -110,7 +110,27 @@ export const TOOLS: Tool[] = [
 ];
 
 export function findTool(name: string): Tool | undefined {
-  return TOOLS.find((t) => t.name === name);
+  return TOOLS.find((t) => t.name === name) ?? mcpTools.get(name);
+}
+
+// --- MCP tools, registered dynamically at runtime, gated as network risk ----
+// runAgent connects MCP servers and registers their tools here so they flow
+// through the exact same gate + audit log as the built-ins.
+
+const mcpTools = new Map<string, Tool>();
+
+export function registerMcpTool(wireName: string, description: string, run: (input: Record<string, any>) => Promise<string>): void {
+  mcpTools.set(wireName, {
+    name: wireName,
+    risk: "network", // an external server call — earn it like any network action
+    description,
+    input: {},
+    run,
+  });
+}
+
+export function clearMcpTools(): void {
+  mcpTools.clear();
 }
 
 /** The trust gate. Reads inside your roots are free; everything else is earned. */
@@ -196,7 +216,7 @@ function recordAction(decision: string, risk: Risk, tool: string, summary: strin
   appendFileSync(p, `- [${t}] **${decision}** · ${risk} · \`${tool}\` · ${summary}\n`, "utf8");
 }
 
-/** Anthropic tool-use schema for the live agent loop. */
+/** Anthropic tool-use schema for the live agent loop (built-ins only). */
 export function toolSchemas(): { name: string; description: string; input_schema: Record<string, unknown> }[] {
   return TOOLS.map((t) => ({
     name: t.name,
@@ -206,5 +226,18 @@ export function toolSchemas(): { name: string; description: string; input_schema
       properties: Object.fromEntries(Object.entries(t.input).map(([k, v]) => [k, { type: v.type, description: v.description }])),
       required: Object.keys(t.input),
     },
+  }));
+}
+
+// MCP tools carry their own JSON Schema from the server; the agent merges these.
+const mcpSchemas = new Map<string, Record<string, unknown>>();
+export function setMcpSchema(wireName: string, inputSchema: Record<string, unknown>): void {
+  mcpSchemas.set(wireName, inputSchema);
+}
+export function mcpToolSchemas(): { name: string; description: string; input_schema: Record<string, unknown> }[] {
+  return [...mcpTools.values()].map((t) => ({
+    name: t.name,
+    description: `${t.description} (risk: network · via MCP)`,
+    input_schema: (mcpSchemas.get(t.name) as Record<string, unknown>) ?? { type: "object", properties: {} },
   }));
 }

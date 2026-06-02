@@ -29,6 +29,7 @@ import { shouldOnboard, onboardRecap } from "../src/commands/onboard.ts";
 import { slashCommand } from "../src/commands/chat.ts";
 import { resilientFetch, isTransientStatus, HttpError, AbortError } from "../src/core/net.ts";
 import { streamComplete } from "../src/core/provider.ts";
+import { McpClient, mcpToolName, parseMcpToolName } from "../src/core/mcp.ts";
 import { verifySignature } from "../src/core/skills.ts";
 import { ensureIdentity, signMessage, verifyMessage, myFingerprint, publicKeyPem } from "../src/core/identity.ts";
 
@@ -231,6 +232,38 @@ test("forget: a term that doesn't exist removes nothing", () => {
   const { removed, files } = forget("this-phrase-was-never-stored-xyz");
   assert.equal(removed, 0);
   assert.equal(files, 0);
+});
+
+// --- mcp: real client over a mock stdio server ------------------------------
+
+const MOCK_MCP = `let b="";process.stdin.on("data",d=>{b+=d;let n;while((n=b.indexOf("\\n"))!==-1){const l=b.slice(0,n);b=b.slice(n+1);if(!l.trim())continue;const m=JSON.parse(l);
+if(m.method==="initialize")r(m.id,{protocolVersion:"2024-11-05",serverInfo:{name:"mock",version:"1"},capabilities:{tools:{}}});
+else if(m.method==="tools/list")r(m.id,{tools:[{name:"echo",description:"echo",inputSchema:{type:"object",properties:{text:{type:"string"}}}}]});
+else if(m.method==="tools/call")r(m.id,{content:[{type:"text",text:"echoed: "+(m.params.arguments?.text??"")}]});}});
+function r(id,result){process.stdout.write(JSON.stringify({jsonrpc:"2.0",id,result})+"\\n")}`;
+
+test("mcp: tool name build/parse round-trips", () => {
+  assert.equal(mcpToolName("github", "create_issue"), "mcp__github__create_issue");
+  const p = parseMcpToolName("mcp__github__create_issue");
+  assert.equal(p?.server, "github");
+  assert.equal(p?.tool, "create_issue");
+  assert.equal(parseMcpToolName("read_file"), null, "built-ins are not MCP names");
+});
+
+test("mcp: client connects, lists, and calls a real stdio server", async () => {
+  const path = join(tmpdir(), `mando-mcp-test-${process.pid}.mjs`);
+  writeFileSync(path, MOCK_MCP, "utf8");
+  const client = new McpClient("mock", { command: "node", args: [path] });
+  try {
+    await client.connect();
+    const tools = await client.listTools();
+    assert.equal(tools.length, 1);
+    assert.equal(tools[0].name, "echo");
+    const out = await client.callTool("echo", { text: "hi" });
+    assert.match(out, /echoed: hi/);
+  } finally {
+    client.close();
+  }
 });
 
 // --- net: resilient retry/backoff -------------------------------------------

@@ -6,6 +6,12 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **MCP client (`mando mcp`).** Mandolin now speaks the Model Context Protocol — connect any MCP
+  server (`mando mcp add <name> <command> [args…]`) and the agent can use its tools. Built on
+  JSON-RPC over a stdio subprocess (`node:child_process`, zero deps): spawn → initialize → list →
+  call. Every MCP tool the agent invokes is classed **network-risk** and routes through the trust
+  gate (denied by default; grant or approve) and the `actions.md` audit log — safer than wiring
+  tools in raw. Offline `mando mcp --demo` does a real handshake to a bundled mock server.
 - **Session resume.** `mando chat --continue` (`-c`) rehydrates your most recent conversation into
   context, so you pick up where you left off instead of starting cold every time. Built on the
   plain-text session logs — `loadSessionHistory` parses a log back into a message history.

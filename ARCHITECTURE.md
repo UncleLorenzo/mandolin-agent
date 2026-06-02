@@ -54,6 +54,7 @@ src/
     sovereignty.ts    # export the whole self; forget anything, for real
     gateway.ts        # always-on Telegram gateway (HTTPS); the remote (stricter) approver
     pairing.ts        # the chat allowlist: nobody talks to the gateway until you approve them
+    mcp.ts            # MCP client (JSON-RPC over stdio); connect external tool servers
   commands/           # one file per command, presentation only — logic lives in core/
 test/
   core.test.ts        # node:test over the trust-critical paths

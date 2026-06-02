@@ -16,6 +16,7 @@ import { scopeCmd } from "./commands/scope.ts";
 import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
 import { gatewayCmd, pairCmd } from "./commands/gateway.ts";
 import { identityCmd } from "./commands/identity.ts";
+import { mcpCmd } from "./commands/mcp.ts";
 import { doctor } from "./commands/doctor.ts";
 import { modelCmd } from "./commands/model.ts";
 import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette, paint } from "./brand.ts";
@@ -89,6 +90,9 @@ switch (cmd) {
   case "identity":
   case "id":
     identityCmd(rest);
+    break;
+  case "mcp":
+    await mcpCmd(rest);
     break;
   case "reflect":
     await reflectLatest();
@@ -167,6 +171,7 @@ function help(): void {
     ["gateway", "live on a server, reachable over Telegram"],
     ["pair [approve]", "control who may DM your agent"],
     ["identity", "your Ed25519 signing key + trusted signers"],
+    ["mcp", "connect MCP servers — the whole tool ecosystem"],
     ["status", "where things stand"],
     ["ledger", "the audit trail of what you trusted"],
   ];

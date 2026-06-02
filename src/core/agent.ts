@@ -6,8 +6,9 @@
 
 import type { Message, RawMessage, ContentBlock } from "./provider.ts";
 import { complete, completeRaw, streamComplete } from "./provider.ts";
-import { toolSchemas, executeTool, findTool } from "./tools.ts";
+import { toolSchemas, executeTool, findTool, registerMcpTool, clearMcpTools, setMcpSchema, mcpToolSchemas } from "./tools.ts";
 import type { Approver, ToolCall } from "./tools.ts";
+import { loadRegistry, McpClient, mcpToolName } from "./mcp.ts";
 import { readSignature } from "./signature.ts";
 import { readFacts } from "./memory.ts";
 import { list, verify } from "./skills.ts";
@@ -64,27 +65,59 @@ export async function runAgent(task: string, approver: Approver, onEvent?: (e: A
   const system =
     buildSystem() +
     "\n\n# Acting\nYou can act through tools. Reading inside the project is free; writing files, running commands, and " +
-    "network access need the user's standing grant or in-the-moment approval. Take the smallest action that moves the " +
-    "task forward. When you're finished, reply with a short summary and no tool call.";
+    "network access (including MCP tools) need the user's standing grant or in-the-moment approval. Take the smallest " +
+    "action that moves the task forward. When you're finished, reply with a short summary and no tool call.";
 
-  const messages: RawMessage[] = [{ role: "user", content: task }];
+  // Connect any configured MCP servers and register their tools through the gate.
+  const clients = await connectMcp(onEvent);
+  try {
+    const tools = [...toolSchemas(), ...mcpToolSchemas()];
+    const messages: RawMessage[] = [{ role: "user", content: task }];
 
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const turn = await completeRaw(system, messages, toolSchemas(), 2048);
-    if (turn.text) onEvent?.({ kind: "think", text: turn.text });
-    messages.push({ role: "assistant", content: turn.content });
+    for (let step = 0; step < MAX_STEPS; step++) {
+      const turn = await completeRaw(system, messages, tools, 2048);
+      if (turn.text) onEvent?.({ kind: "think", text: turn.text });
+      messages.push({ role: "assistant", content: turn.content });
 
-    if (turn.toolUses.length === 0) return turn.text || "(done)";
+      if (turn.toolUses.length === 0) return turn.text || "(done)";
 
-    const results: ContentBlock[] = [];
-    for (const tu of turn.toolUses) {
-      const call: ToolCall = { tool: tu.name, input: tu.input };
-      onEvent?.({ kind: "tool", call, risk: findTool(tu.name)?.risk ?? "read" });
-      const outcome = await executeTool(call, approver);
-      onEvent?.({ kind: "result", tool: tu.name, ok: outcome.ok, decision: outcome.decision });
-      results.push({ type: "tool_result", tool_use_id: tu.id, content: outcome.output, is_error: !outcome.ok });
+      const results: ContentBlock[] = [];
+      for (const tu of turn.toolUses) {
+        const call: ToolCall = { tool: tu.name, input: tu.input };
+        onEvent?.({ kind: "tool", call, risk: findTool(tu.name)?.risk ?? "read" });
+        const outcome = await executeTool(call, approver);
+        onEvent?.({ kind: "result", tool: tu.name, ok: outcome.ok, decision: outcome.decision });
+        results.push({ type: "tool_result", tool_use_id: tu.id, content: outcome.output, is_error: !outcome.ok });
+      }
+      messages.push({ role: "user", content: results });
     }
-    messages.push({ role: "user", content: results });
+    return "(stopped: reached the step limit without finishing)";
+  } finally {
+    clearMcpTools();
+    for (const c of clients) c.close();
   }
-  return "(stopped: reached the step limit without finishing)";
+}
+
+/** Spawn configured MCP servers and register their tools (gated as network). */
+async function connectMcp(onEvent?: (e: AgentEvent) => void): Promise<McpClient[]> {
+  const reg = loadRegistry();
+  const clients: McpClient[] = [];
+  for (const [name, cfg] of Object.entries(reg)) {
+    const client = new McpClient(name, cfg);
+    try {
+      await client.connect();
+      const tools = await client.listTools();
+      for (const t of tools) {
+        const wire = mcpToolName(name, t.name);
+        setMcpSchema(wire, t.inputSchema);
+        registerMcpTool(wire, t.description, (input) => client.callTool(t.name, input));
+      }
+      clients.push(client);
+      onEvent?.({ kind: "think", text: `(connected MCP "${name}": ${tools.length} tool(s))` });
+    } catch (e) {
+      onEvent?.({ kind: "think", text: `(MCP "${name}" unavailable: ${(e as Error).message})` });
+      client.close();
+    }
+  }
+  return clients;
 }

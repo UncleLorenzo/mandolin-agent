@@ -21,6 +21,10 @@ aim to acknowledge within a few days.
   that quarantines poisoned skills inspects every shell command: a *dangerous* one (`rm -rf`,
   `sudo`, `curl … | sh`, reverse shells, key/credential access, history-wiping) **always** falls
   back to asking, grant or not. A grant is never a licence to wreck the box.
+- **MCP tools are gated like any network action.** Connecting an MCP server does not make its tools
+  trusted. Every MCP tool call is classed `network`-risk — denied by default, requiring a grant or
+  in-the-moment approval, and logged. An MCP server is third-party code in a subprocess: add ones
+  you trust; the gate limits what a misbehaving one can do through the agent.
 - **Audit log.** Every action — allowed *or* denied — is appended to `~/.mandolin/actions.md`.
 - **No silent learning.** Distilled skills land in `skills/proposed/` and do nothing until
   you `mando promote` them. Promotion records a content digest; a trusted skill whose body

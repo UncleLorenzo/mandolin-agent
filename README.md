@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-49%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-51%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
@@ -161,6 +161,22 @@ instinct you teach Mandolin still reads in Claude Code, Cursor, or Codex). New o
 `proposed/`. They do nothing until you `mando promote` them into `trusted/`. Promotion records
 a digest and writes a line to `ledger.md` — your audit trail of what you trusted, and when.
 
+**The whole MCP ecosystem — gated** — `mando mcp`
+MCP (Model Context Protocol) is the industry standard for connecting agents to tools — GitHub,
+Postgres, Slack, browsers, filesystems, hundreds more. Mandolin is a full MCP **client**: point it
+at any MCP server and the agent can use its tools. One line wires one in:
+
+```bash
+mando mcp add github npx -y @modelcontextprotocol/server-github
+mando mcp --demo     # no install needed — a real handshake to a bundled mock server
+```
+
+The Mandolin difference: an MCP tool isn't trusted just because it's connected. Every MCP call the
+agent makes is **network-risk** — it runs through the same trust gate as shell and fetch (denied by
+default; `mando grant network` or approve per-call) and lands in `actions.md`. So Mandolin is
+*safer* with MCP than a client that wires those tools in raw. Zero dependencies — MCP is just
+JSON-RPC over a subprocess pipe, spoken with `node:child_process`.
+
 **Signed provenance** — `mando identity`
 A digest tells you *if* a skill changed; a signature tells you *who* vouched for it. On first run
 Mandolin mints an **Ed25519** keypair — your identity. Promoting a skill signs its body with your
@@ -260,6 +276,7 @@ Deliberately small. Depth over breadth.
 | `mando recall <query>` | ask your memory — ranked by meaning, not grep |
 | `mando skills` | trusted instincts (with signature status) + proposed |
 | `mando identity` | your Ed25519 signing key + trusted signers |
+| `mando mcp` | connect MCP servers — the whole tool ecosystem, gated |
 | `mando import <url\|file>` | pull in any ecosystem skill — scanned, quarantined |
 | `mando promote <name>` | sign off — make a proposed instinct trusted |
 | `mando grant <cap>` | let it act unprompted (write/exec/network) |
