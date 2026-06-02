@@ -6,6 +6,14 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Graceful Ctrl-C.** Interrupting a streaming reply aborts just that answer (keeping what
+  streamed) and returns to the prompt; Ctrl-C at an idle prompt ends the session cleanly. Abort
+  is plumbed through `streamComplete` → `resilientFetch` via `AbortSignal` and is never retried.
+- **Config validation on load.** `validateConfig` sanitizes `config.json` — unknown provider,
+  bad model/baseUrl/writeScope are dropped (not trusted), and `mando doctor` names each problem
+  instead of failing mysteriously later.
+- **Live spinner in `mando act`.** A TTY-aware working indicator shows the agent thinking and
+  which tool is running between visible steps (silent in non-TTY/CI).
 - **Live streaming in `mando chat`.** Replies print token-by-token via SSE (Anthropic +
   OpenAI-compatible), with a graceful one-shot fallback for non-streaming providers — the chat
   feels alive instead of frozen.

@@ -20,12 +20,12 @@ import { exportBundle, findForgettable, forget } from "../src/core/sovereignty.t
 import { recordFact } from "../src/core/memory.ts";
 import { remoteApprover } from "../src/core/gateway.ts";
 import { requestPairing, approve, isApproved, revokePairing } from "../src/core/pairing.ts";
-import { getConfig, setConfig } from "../src/core/provider.ts";
+import { getConfig, setConfig, validateConfig } from "../src/core/provider.ts";
 import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { paths } from "../src/home.ts";
 import { classifyWrite } from "../src/core/scope.ts";
-import { resilientFetch, isTransientStatus, HttpError } from "../src/core/net.ts";
+import { resilientFetch, isTransientStatus, HttpError, AbortError } from "../src/core/net.ts";
 import { streamComplete } from "../src/core/provider.ts";
 import { verifySignature } from "../src/core/skills.ts";
 import { ensureIdentity, signMessage, verifyMessage, myFingerprint, publicKeyPem } from "../src/core/identity.ts";
@@ -286,6 +286,38 @@ test("net: retries network errors, then gives up after the budget", async () => 
   }
 });
 
+test("net: a pre-aborted signal throws AbortError without calling fetch", async () => {
+  let calls = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { calls++; return fakeResponse(200); }) as typeof fetch;
+  try {
+    const ac = new AbortController();
+    ac.abort();
+    await assert.rejects(
+      () => resilientFetch("https://x", {}, { sleep: noSleep, signal: ac.signal }),
+      (e) => e instanceof AbortError
+    );
+    assert.equal(calls, 0, "aborted before any network call");
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("net: aborting mid-flight does not get retried", async () => {
+  let calls = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { calls++; const e = new Error("aborted"); e.name = "AbortError"; throw e; }) as typeof fetch;
+  try {
+    await assert.rejects(
+      () => resilientFetch("https://x", {}, { sleep: noSleep, retries: 4 }),
+      (e) => e instanceof AbortError
+    );
+    assert.equal(calls, 1, "abort is not a retryable failure");
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
 test("net: streaming assembles SSE deltas and fires onToken per chunk", async () => {
   setConfig({ provider: "anthropic", model: "claude-sonnet-4-6" });
   process.env.ANTHROPIC_API_KEY = "test-key";
@@ -429,6 +461,26 @@ test("gateway: remote approver honors a pre-granted capability", async () => {
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
   setCapability("network", false);
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("config: validateConfig keeps good values and reports bad ones", () => {
+  const ok = validateConfig({ provider: "groq", model: "llama-3.3-70b", capabilities: { exec: true } });
+  assert.equal(ok.config.provider, "groq");
+  assert.equal(ok.config.model, "llama-3.3-70b");
+  assert.equal(ok.config.capabilities?.exec, true);
+  assert.equal(ok.problems.length, 0);
+
+  const bad = validateConfig({ provider: "definitely-not-real", model: 42, baseUrl: "ftp://x", writeScope: "nope" });
+  assert.equal(bad.config.provider, "anthropic", "unknown provider falls back");
+  assert.ok(bad.problems.some((p) => /unknown provider/.test(p)));
+  assert.ok(bad.problems.some((p) => /baseUrl/.test(p)));
+  assert.ok(bad.problems.some((p) => /writeScope/.test(p)));
+});
+
+test("config: a non-object or empty config yields safe defaults", () => {
+  assert.equal(validateConfig(null).config.provider, "anthropic");
+  assert.equal(validateConfig("garbage").config.provider, "anthropic");
+  assert.equal(validateConfig({}).config.model, "claude-sonnet-4-6");
 });
 
 test("robustness: a corrupt config.json falls back to defaults, never throws", () => {

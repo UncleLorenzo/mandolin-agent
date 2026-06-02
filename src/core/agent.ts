@@ -45,8 +45,8 @@ export async function respond(history: Message[]): Promise<string> {
 }
 
 /** One turn, streamed token-by-token. Returns the full text when done. */
-export async function respondStream(history: Message[], onToken: (chunk: string) => void): Promise<string> {
-  return streamComplete(buildSystem(), history, onToken, 1024);
+export async function respondStream(history: Message[], onToken: (chunk: string) => void, signal?: AbortSignal): Promise<string> {
+  return streamComplete(buildSystem(), history, onToken, 1024, signal);
 }
 
 export type AgentEvent =

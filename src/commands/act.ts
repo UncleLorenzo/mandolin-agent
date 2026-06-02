@@ -13,6 +13,8 @@ import { runAgent } from "../core/agent.ts";
 import type { AgentEvent } from "../core/agent.ts";
 import { executeTool, decide, findTool } from "../core/tools.ts";
 import type { Approver, ToolCall } from "../core/tools.ts";
+import { spinner } from "../core/spinner.ts";
+import type { Spinner } from "../core/spinner.ts";
 
 export async function act(args: string[]): Promise<void> {
   ensureHome();
@@ -33,7 +35,22 @@ export async function act(args: string[]): Promise<void> {
     `   ${eyebrow("operating as your Signature · every gated action asks first")}\n\n` +
     `   ${tone.ash("task")}  ${tone.cream(task)}\n\n`
   );
-  const summary = await runAgent(task, interactiveApprover, renderEvent);
+  // A live spinner shows the agent is working between visible steps; it pauses
+  // around approval prompts and rendered events so output never collides.
+  let spin: Spinner | null = spinner("thinking");
+  const stopSpin = () => { spin?.stop(); spin = null; };
+  const liveApprover: Approver = async (call, why) => { stopSpin(); const ok = await interactiveApprover(call, why); spin = spinner("working"); return ok; };
+  const liveRender = (e: AgentEvent) => {
+    stopSpin();
+    renderEvent(e);
+    spin = spinner(e.kind === "tool" ? `running ${e.call.tool}` : "thinking");
+  };
+  let summary: string;
+  try {
+    summary = await runAgent(task, liveApprover, liveRender);
+  } finally {
+    stopSpin();
+  }
   process.stdout.write(`\n   ${mark.ok} ${tone.cream(summary)}\n\n`);
 }
 

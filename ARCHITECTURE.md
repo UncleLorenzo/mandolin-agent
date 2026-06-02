@@ -47,7 +47,8 @@ src/
     scope.ts          # per-path write scoping — a grant can't touch secrets or wander off-project
     identity.ts       # Ed25519 identity: sign promoted skills, verify signatures, trusted keys
     provider.ts       # model-agnostic registry (10 providers); complete + streamComplete (SSE)
-    net.ts            # resilient fetch: retry 429/5xx/network with backoff+jitter, fail fast on 4xx
+    net.ts            # resilient fetch: retry 429/5xx/network with backoff+jitter, fail fast on 4xx; AbortSignal-aware
+    spinner.ts        # tiny TTY-aware "working" indicator for the agentic act loop
     agent.ts          # the live loop: assemble the system prompt, run tools through the gate
     reflect.ts        # the closed loop: a session → Signature deltas + a proposed instinct
     sovereignty.ts    # export the whole self; forget anything, for real

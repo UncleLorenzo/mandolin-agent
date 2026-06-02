@@ -59,20 +59,46 @@ export async function chat(args: string[]): Promise<void> {
   rl.setPrompt(`   ${tone.ash("you")}  `);
   rl.prompt();
 
+  // Ctrl-C: if a reply is streaming, abort just that reply and return to the
+  // prompt; if we're idle at the prompt, bow out cleanly.
+  let streaming: AbortController | null = null;
+  rl.on("SIGINT", () => {
+    if (streaming) {
+      streaming.abort();
+      process.stdout.write(`\n   ${dim(tone.ash("— stopped —"))}\n\n`);
+    } else {
+      process.stdout.write(`\n   ${dim(tone.ash("ending the session…"))}\n`);
+      rl.close();
+    }
+  });
+
   for await (const lineRaw of rl) {
     const line = lineRaw.trim();
     if (line === "/quit" || line === "/q") break;
     if (!line) { rl.prompt(); continue; }
     record(id, { role: "you", text: line });
     history.push({ role: "user", content: line });
+    streaming = new AbortController();
+    let streamed = "";
     try {
       process.stdout.write(`   ${tone.teal("mandolin")}  `);
-      const reply = await respondStream(history, (chunk) => process.stdout.write(tone.cream(chunk)));
+      const reply = await respondStream(
+        history,
+        (chunk) => { streamed += chunk; process.stdout.write(tone.cream(chunk)); },
+        streaming.signal,
+      );
       process.stdout.write("\n\n");
       record(id, { role: "mandolin", text: reply });
       history.push({ role: "assistant", content: reply });
     } catch (e) {
-      process.stdout.write(`\n   ${paint("✗", palette.magenta)} ${tone.cream((e as Error).message)}\n\n`);
+      if ((e as Error)?.name === "AbortError") {
+        // keep whatever streamed so the conversation stays coherent
+        if (streamed) { record(id, { role: "mandolin", text: streamed + " …(stopped)" }); history.push({ role: "assistant", content: streamed }); }
+      } else {
+        process.stdout.write(`\n   ${paint("✗", palette.magenta)} ${tone.cream((e as Error).message)}\n\n`);
+      }
+    } finally {
+      streaming = null;
     }
     rl.prompt();
   }

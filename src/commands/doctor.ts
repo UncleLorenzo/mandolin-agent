@@ -6,7 +6,7 @@ import { existsSync, accessSync, constants, writeFileSync, rmSync, readFileSync 
 import { join } from "node:path";
 import { wordmark, rule, tone, dim, mark, eyebrow, palette, paint } from "../brand.ts";
 import { paths, home, isInitialized } from "../home.ts";
-import { getConfig, apiKey, isLive, PROVIDERS } from "../core/provider.ts";
+import { getConfig, apiKey, isLive, PROVIDERS, configProblems } from "../core/provider.ts";
 
 type Check = { label: string; status: "ok" | "warn" | "fail"; detail: string };
 
@@ -39,10 +39,12 @@ function checkConfig(): Check {
   if (!existsSync(p)) return { label: "Config", status: "ok", detail: "using defaults (no config.json yet)" };
   try {
     JSON.parse(readFileSync(p, "utf8"));
-    return { label: "Config", status: "ok", detail: `${p} — valid JSON` };
   } catch {
     return { label: "Config", status: "fail", detail: `${p} — corrupt JSON; delete it to reset to defaults` };
   }
+  const problems = configProblems();
+  if (problems.length) return { label: "Config", status: "warn", detail: problems.join("; ") + " (bad values ignored)" };
+  return { label: "Config", status: "ok", detail: `${p} — valid` };
 }
 
 function checkProvider(): Check {

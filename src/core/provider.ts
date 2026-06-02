@@ -48,16 +48,69 @@ export type Config = {
 
 const DEFAULT: Config = { provider: "anthropic", model: "claude-sonnet-4-6", capabilities: {} };
 
+/**
+ * Validate + sanitize a raw config object into a safe Config. Bad values are
+ * dropped (not trusted), and every correction is collected so `doctor` can show
+ * them. Never throws — a broken config degrades to sane defaults, loudly.
+ */
+export function validateConfig(raw: unknown): { config: Config; problems: string[] } {
+  const problems: string[] = [];
+  const out: Config = { ...DEFAULT, capabilities: {} };
+  if (!raw || typeof raw !== "object") {
+    if (raw !== undefined) problems.push("config is not an object — using defaults");
+    return { config: out, problems };
+  }
+  const r = raw as Record<string, unknown>;
+
+  if (typeof r.provider === "string") {
+    if (r.provider in PROVIDERS) out.provider = r.provider as Provider;
+    else problems.push(`unknown provider "${r.provider}" — falling back to ${DEFAULT.provider}`);
+  }
+  if (typeof r.model === "string" && r.model.trim()) out.model = r.model.trim();
+  else if (r.model !== undefined) problems.push("invalid model — using the default");
+
+  if (typeof r.baseUrl === "string") {
+    if (/^https?:\/\//.test(r.baseUrl) || r.baseUrl.startsWith("http://localhost")) out.baseUrl = r.baseUrl;
+    else problems.push("baseUrl must be an http(s) URL — ignored");
+  }
+  if (r.capabilities && typeof r.capabilities === "object") {
+    const caps: Partial<Record<Capability, boolean>> = {};
+    for (const k of ["write", "exec", "network"] as Capability[]) {
+      if (typeof (r.capabilities as Record<string, unknown>)[k] === "boolean") caps[k] = (r.capabilities as Record<string, boolean>)[k];
+    }
+    out.capabilities = caps;
+  }
+  if (Array.isArray(r.writeScope)) {
+    const scope = r.writeScope.filter((s): s is string => typeof s === "string");
+    if (scope.length !== r.writeScope.length) problems.push("writeScope had non-string entries — dropped");
+    out.writeScope = scope;
+  } else if (r.writeScope !== undefined) {
+    problems.push("writeScope must be an array of paths — ignored");
+  }
+  return { config: out, problems };
+}
+
 export function getConfig(): Config {
   const p = paths.config();
   if (existsSync(p)) {
     try {
-      return { ...DEFAULT, ...JSON.parse(readFileSync(p, "utf8")) };
+      return validateConfig(JSON.parse(readFileSync(p, "utf8"))).config;
     } catch {
-      /* fall through to default */
+      /* unparseable JSON — fall through to default */
     }
   }
   return DEFAULT;
+}
+
+/** Surface config problems (used by `doctor`). Returns [] if clean or absent. */
+export function configProblems(): string[] {
+  const p = paths.config();
+  if (!existsSync(p)) return [];
+  try {
+    return validateConfig(JSON.parse(readFileSync(p, "utf8"))).problems;
+  } catch {
+    return ["config.json is not valid JSON — delete it to reset to defaults"];
+  }
 }
 
 export function setConfig(patch: Partial<Config>): Config {
@@ -114,14 +167,16 @@ export async function streamComplete(
   system: string,
   messages: Message[],
   onToken: (chunk: string) => void,
-  maxTokens = 1024
+  maxTokens = 1024,
+  signal?: AbortSignal
 ): Promise<string> {
   const cfg = getConfig();
   try {
-    if (cfg.provider === "anthropic") return await streamAnthropic(cfg, system, messages, onToken, maxTokens);
-    if (PROVIDERS[cfg.provider]?.openaiCompatible) return await streamOpenAI(cfg, system, messages, onToken, maxTokens);
-  } catch {
-    /* fall through to non-streaming */
+    if (cfg.provider === "anthropic") return await streamAnthropic(cfg, system, messages, onToken, maxTokens, signal);
+    if (PROVIDERS[cfg.provider]?.openaiCompatible) return await streamOpenAI(cfg, system, messages, onToken, maxTokens, signal);
+  } catch (e) {
+    if ((e as Error)?.name === "AbortError") throw e; // a Ctrl-C is not a fallback case
+    /* otherwise fall through to non-streaming */
   }
   const full = await complete(system, messages, maxTokens);
   onToken(full); // deliver in one shot so the caller's render path is uniform
@@ -147,14 +202,14 @@ async function* sseLines(res: Response): AsyncGenerator<string> {
   }
 }
 
-async function streamAnthropic(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number): Promise<string> {
+async function streamAnthropic(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number, signal?: AbortSignal): Promise<string> {
   const key = apiKey("anthropic");
   if (!key) throw new Error("offline");
   const res = await resilientFetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, messages, stream: true }),
-  });
+  }, { signal });
   let full = "";
   for await (const data of sseLines(res)) {
     if (data === "[DONE]") break;
@@ -171,14 +226,14 @@ async function streamAnthropic(cfg: Config, system: string, messages: Message[],
   return full;
 }
 
-async function streamOpenAI(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number): Promise<string> {
+async function streamOpenAI(cfg: Config, system: string, messages: Message[], onToken: (c: string) => void, maxTokens: number, signal?: AbortSignal): Promise<string> {
   const key = apiKey(cfg.provider);
   const base = cfg.baseUrl || PROVIDERS[cfg.provider]?.baseUrl || "https://api.openai.com/v1";
   const res = await resilientFetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${key ?? ""}`, "content-type": "application/json" },
     body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, stream: true, messages: [{ role: "system", content: system }, ...messages] }),
-  });
+  }, { signal });
   let full = "";
   for await (const data of sseLines(res)) {
     if (data === "[DONE]") break;

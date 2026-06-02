@@ -14,7 +14,16 @@ export type RetryOptions = {
   maxDelayMs?: number;     // cap on any single backoff (default 8000)
   sleep?: (ms: number) => Promise<void>; // injectable for tests
   onRetry?: (attempt: number, delayMs: number, reason: string) => void;
+  signal?: AbortSignal;    // abort an in-flight request (e.g. Ctrl-C)
 };
+
+/** Thrown when a request is aborted by the caller's signal. */
+export class AbortError extends Error {
+  constructor() {
+    super("aborted");
+    this.name = "AbortError";
+  }
+}
 
 const TRANSIENT_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
@@ -67,8 +76,9 @@ export async function resilientFetch(url: string, init: RequestInit, opts: Retry
 
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (opts.signal?.aborted) throw new AbortError();
     try {
-      const res = await fetch(url, init);
+      const res = await fetch(url, { ...init, signal: opts.signal });
       if (res.ok) return res;
       // Non-OK: retry only if transient and we have attempts left.
       if (isTransientStatus(res.status) && attempt < retries) {
@@ -83,6 +93,8 @@ export async function resilientFetch(url: string, init: RequestInit, opts: Retry
       // Permanent, or out of attempts: surface it.
       throw new HttpError(res.status, await res.text().catch(() => ""));
     } catch (err) {
+      // Caller aborted (Ctrl-C) — stop immediately, never retry.
+      if (opts.signal?.aborted || (err as Error)?.name === "AbortError") throw new AbortError();
       // A thrown HttpError above for a permanent status should propagate as-is.
       if (err instanceof HttpError && !isTransientStatus(err.status)) throw err;
       // Network-level error (DNS, reset, timeout) — retry if attempts remain.
