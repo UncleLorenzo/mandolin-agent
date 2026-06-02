@@ -6,6 +6,14 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Expanded scanner ruleset.** The danger scanner (which now guards skill imports, shell
+  commands, *and* write targets) gained coverage: raw-disk overwrite (`dd of=/dev/…`), fork bombs,
+  `mkfs`/erase, setuid backdoors, `eval $(curl …)`, package installs from untrusted sources,
+  scripted OS automation, disabling security controls (SIP/firewall/SELinux), fetched-payload
+  persistence, and keychain access — with a false-positive guard test so ordinary dev commands
+  (`npm install`, `git commit`, `chmod +x`) stay clean.
+- **CI now builds and smoke-runs the binary** (build job): every push compiles `dist/mando.mjs`
+  and runs every offline rehearsal through it, so the *install path* can't silently break.
 - **Signed-skill provenance (Ed25519).** On first run Mandolin mints a keypair — your identity.
   Promoting a skill signs its body; `mando skills` shows `✦ signed` / `⚠ unknown signer` /
   `✗ tampered`. Exchange public keys (`mando identity export` / `trust`) to share instincts that

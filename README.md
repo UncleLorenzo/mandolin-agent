@@ -11,7 +11,7 @@ and earns every instinct before it acts on it.
 [![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
 [![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
-![tests](https://img.shields.io/badge/tests-34%20passing-39b8c4.svg)
+![tests](https://img.shields.io/badge/tests-36%20passing-39b8c4.svg)
 
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
