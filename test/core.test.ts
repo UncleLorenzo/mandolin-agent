@@ -16,6 +16,8 @@ import { reflectFromInterview } from "../src/core/reflect.ts";
 import { scan } from "../src/core/scan.ts";
 import { SAMPLE_CLEAN, SAMPLE_POISONED } from "../src/commands/import.ts";
 import { rankedSearch, tokenize } from "../src/core/recall.ts";
+import { exportBundle, findForgettable, forget } from "../src/core/sovereignty.ts";
+import { recordFact } from "../src/core/memory.ts";
 
 ensureHome();
 
@@ -163,4 +165,31 @@ test("recall: a plain substring search would miss what recall finds", () => {
   const substringHits = RECALL_DOCS.filter((d) => d.text.toLowerCase().includes(q));
   assert.equal(substringHits.length, 0, "grep finds nothing");
   assert.ok(rankedSearch(q, RECALL_DOCS, 1).length > 0, "recall finds something");
+});
+
+// --- sovereignty: export + forget ------------------------------------------
+
+test("export: bundle includes signature, facts, instincts, and sessions", () => {
+  learn("Context", "an exportable marker fact", "session export-test");
+  const bundle = exportBundle();
+  assert.match(bundle, /# Mandolin — exported self/);
+  assert.match(bundle, /## Signature/);
+  assert.match(bundle, /## Trusted instincts/);
+  assert.match(bundle, /## Sessions/);
+  assert.match(bundle, /an exportable marker fact/);
+});
+
+test("forget: previews matches, then erases them for real", () => {
+  recordFact("the secret codename is bluejay", "session forget-test");
+  assert.ok(findForgettable("bluejay").length >= 1, "should preview the line before erasing");
+  const { removed } = forget("bluejay");
+  assert.ok(removed >= 1, "should erase at least one line");
+  assert.equal(findForgettable("bluejay").length, 0, "nothing should remain after forget");
+  assert.ok(!exportBundle().includes("bluejay"), "erased data must not survive in an export");
+});
+
+test("forget: a term that doesn't exist removes nothing", () => {
+  const { removed, files } = forget("this-phrase-was-never-stored-xyz");
+  assert.equal(removed, 0);
+  assert.equal(files, 0);
 });

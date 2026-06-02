@@ -6,6 +6,7 @@ import { readSignature, signatureDepth } from "../core/signature.ts";
 import { list, verify } from "../core/skills.ts";
 import { readFacts } from "../core/memory.ts";
 import { getConfig, isLive } from "../core/provider.ts";
+import { footprint } from "../core/sovereignty.ts";
 import { existsSync, readFileSync } from "node:fs";
 
 function notInit(): boolean {
@@ -69,8 +70,10 @@ export function showStatus(): void {
   out.push(`   ${dim(tone.ash("provider".padEnd(12)))}${tone.bone(cfg.provider)} ${dim(tone.ash("·"))} ${tone.bone(cfg.model)}`);
   out.push(`   ${dim(tone.ash("model".padEnd(12)))}${live ? mark.ok + " " + tone.teal("live") : mark.pending + " " + tone.gold("offline — set ANTHROPIC_API_KEY")}`);
   if (isInitialized()) {
+    const fp = footprint();
     out.push(`   ${dim(tone.ash("signature".padEnd(12)))}${tone.bone(String(signatureDepth()))} ${dim(tone.ash("things known"))}`);
     out.push(`   ${dim(tone.ash("instincts".padEnd(12)))}${tone.bone(String(list("trusted").length))} ${dim(tone.ash("trusted, "))}${tone.bone(String(list("proposed").length))} ${dim(tone.ash("proposed"))}`);
+    out.push(`   ${dim(tone.ash("memory".padEnd(12)))}${tone.bone(String(fp.sessions))} ${dim(tone.ash("session(s) · "))}${tone.bone(fp.bytes < 1024 ? `${fp.bytes} B` : `${(fp.bytes / 1024).toFixed(1)} KB`)} ${dim(tone.ash("on disk"))}`);
   } else {
     out.push(`   ${dim(tone.ash("signature".padEnd(12)))}${tone.gold("not established — run mando init")}`);
   }

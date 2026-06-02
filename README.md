@@ -7,6 +7,12 @@
 Most agents learn tasks. Mandolin learns your voice, your standards, your taste —
 and earns every instinct before it acts on it.
 
+[![ci](https://github.com/UncleLorenzo/mandolin-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/UncleLorenzo/mandolin-agent/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-39b8c4.svg)](LICENSE)
+[![node](https://img.shields.io/badge/node-%E2%89%A522.6-e6c389.svg)](https://nodejs.org)
+[![deps](https://img.shields.io/badge/runtime%20deps-0-ff8a3d.svg)](package.json)
+![tests](https://img.shields.io/badge/tests-20%20passing-39b8c4.svg)
+
 `self-hosted` · `model-agnostic` · `zero runtime dependencies` · `yours`
 
 <br>
@@ -182,6 +188,8 @@ Deliberately small. Depth over breadth.
 | `mando grant <cap>` | let it act unprompted (write/exec/network) |
 | `mando reflect` | distill the latest session by hand |
 | `mando model [name]` | swap the model / provider |
+| `mando export [file]` | your whole self in one portable file |
+| `mando forget <term>` | erase anything from memory — for real |
 | `mando status` | where things stand |
 | `mando ledger` | the audit trail of what you trusted |
 
@@ -214,7 +222,11 @@ Anthropic · OpenAI · Ollama · Google Gemini · Groq · Mistral · DeepSeek ·
 - **Self-hosted.** It lives in `~/.mandolin`. No account, no cloud, no telemetry.
 - **Inspectable.** Signature, memory, instincts, ledger — all plain text. `cat` it, `grep` it,
   `git` it, delete it.
-- **Portable.** Commit `~/.mandolin` to a private repo and your agent's whole self moves with you.
+- **Portable.** `mando export` writes your agent's whole self — Signature, memory, instincts,
+  ledger — to one readable file. Carry it, diff it, restore it anywhere.
+- **Erasable.** `mando forget "<term>"` previews every line that mentions it, then *actually
+  deletes* it from disk and rebuilds the index — with a receipt in the audit log. A real
+  right-to-be-forgotten, not a hidden flag. (Most agents have no erasure story at all.)
 - **No vendor gravity.** 10 providers, all equal — none nudged because it pays us. Point it at a
   fully-local model and nothing leaves your machine, ever.
 - **Lean.** Zero runtime dependencies. The model API is just HTTPS; we call it with `fetch`.
@@ -225,15 +237,15 @@ Anthropic · OpenAI · Ollama · Google Gemini · Groq · Mistral · DeepSeek ·
 
 v0.1, honest about itself:
 
-- **Live:** the Signature, file-based memory, the proposed→trusted instinct gate with digests +
-  ledger, **ecosystem skill import with a quarantine scanner** (`mando import`), the reflection
+- **Live:** the Signature, file-based memory, **recall smarter than grep**, the proposed→trusted
+  instinct gate with digests + ledger, **ecosystem skill import with a quarantine scanner**
+  (`mando import`), **export + true erasure** (`mando export` / `mando forget`), the reflection
   loop (LLM-driven with a key; deterministic offline), **gated tool execution**
   (read/write/shell/fetch behind a capability gate + `actions.md` audit log) with a real agentic
-  loop, model-agnostic providers (Anthropic / OpenAI-compatible / Ollama), and the offline `demo`,
-  `act`, and `import` rehearsals.
-- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), richer
-  semantic recall (re-ranking, larger synonym corpus), per-tool path scoping for writes, and a
-  published `npm` / `npx mando` build.
+  loop, 10 model providers, and offline `demo` / `act` / `import` / `recall` rehearsals. 20 tests,
+  CI green, zero runtime deps. See [ARCHITECTURE.md](ARCHITECTURE.md).
+- **Next:** the always-on gateway for messaging channels (Telegram/Discord/Slack/…), per-tool
+  path scoping for writes, and a published `npm` / `npx mando` build.
 
 ---
 

@@ -12,6 +12,7 @@ import { recallCmd } from "./commands/recall.ts";
 import { showSignature, showSkills, showStatus, showLedger } from "./commands/inspect.ts";
 import { promoteCmd } from "./commands/promote.ts";
 import { grant, revoke } from "./commands/grant.ts";
+import { exportCmd, forgetCmd } from "./commands/sovereign.ts";
 import { modelCmd } from "./commands/model.ts";
 import { wordmark, rule, tone, dim, mark, eyebrow, gradient, palette } from "./brand.ts";
 import { readSignature } from "./core/signature.ts";
@@ -62,6 +63,12 @@ switch (cmd) {
     break;
   case "revoke":
     revoke(rest[0]);
+    break;
+  case "export":
+    exportCmd(rest);
+    break;
+  case "forget":
+    await forgetCmd(rest);
     break;
   case "reflect":
     await reflectLatest();
@@ -120,6 +127,8 @@ function help(): void {
     ["grant <cap>", "let it act unprompted (write/exec/network)"],
     ["reflect", "distill the latest session by hand"],
     ["model [name]", "swap the model / provider"],
+    ["export [file]", "your whole self in one portable file"],
+    ["forget <term>", "erase anything from memory — for real"],
     ["status", "where things stand"],
     ["ledger", "the audit trail of what you trusted"],
   ];
