@@ -6,6 +6,9 @@ All notable changes to the Mandolin Agent. Format follows
 ## [Unreleased]
 
 ### Added
+- **Session resume.** `mando chat --continue` (`-c`) rehydrates your most recent conversation into
+  context, so you pick up where you left off instead of starting cold every time. Built on the
+  plain-text session logs — `loadSessionHistory` parses a log back into a message history.
 - **In-chat slash-commands.** Inside `mando chat`: `/help`, `/model [name]` (swap models
   mid-conversation), `/reset` (clear context, keep the Signature), `/signature`, `/skills`,
   `/quit`. They run locally and never hit the API; unknown commands show a hint instead of being

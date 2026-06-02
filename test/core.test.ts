@@ -17,7 +17,7 @@ import { scan } from "../src/core/scan.ts";
 import { SAMPLE_CLEAN, SAMPLE_POISONED } from "../src/commands/import.ts";
 import { rankedSearch, tokenize } from "../src/core/recall.ts";
 import { exportBundle, findForgettable, forget } from "../src/core/sovereignty.ts";
-import { recordFact } from "../src/core/memory.ts";
+import { recordFact, newSessionId, openSession, record, loadSessionHistory, latestSessionId } from "../src/core/memory.ts";
 import { remoteApprover } from "../src/core/gateway.ts";
 import { requestPairing, approve, isApproved, revokePairing } from "../src/core/pairing.ts";
 import { getConfig, setConfig, validateConfig } from "../src/core/provider.ts";
@@ -463,6 +463,19 @@ test("gateway: remote approver honors a pre-granted capability", async () => {
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), true);
   setCapability("network", false);
   assert.equal(await approver({ tool: "fetch_url", input: { url: "https://ok" } }, "x"), false);
+});
+
+test("memory: a session round-trips to a resumable history", () => {
+  const sid = newSessionId();
+  openSession(sid, "Resume test");
+  record(sid, { role: "you", text: "what's our deploy cadence?" });
+  record(sid, { role: "mandolin", text: "Fridays, after tests pass." });
+  const hist = loadSessionHistory(sid);
+  assert.equal(hist.length, 2);
+  assert.equal(hist[0].role, "user");
+  assert.equal(hist[1].role, "assistant");
+  assert.match(hist[1].content, /Fridays/);
+  assert.equal(latestSessionId(), sid, "newest session is the latest");
 });
 
 test("chat: /reset clears history, /model switches, unknown returns false", () => {

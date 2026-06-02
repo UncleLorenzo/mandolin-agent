@@ -65,6 +65,25 @@ export function listSessions(): string[] {
     .reverse();
 }
 
+/** The most recent session id, or undefined if there are none. */
+export function latestSessionId(): string | undefined {
+  return listSessions()[0]?.replace(/\.md$/, "");
+}
+
+/**
+ * Reconstruct a chat history (Message[]) from a session log, so a conversation
+ * can be resumed where it left off. Maps **you** → user, **mandolin** →
+ * assistant; ignores headers and blank lines.
+ */
+export function loadSessionHistory(id: string): { role: "user" | "assistant"; content: string }[] {
+  const out: { role: "user" | "assistant"; content: string }[] = [];
+  for (const line of readSession(id).split("\n")) {
+    const m = line.match(/^\*\*(you|mandolin)\*\*:\s*(.+)$/);
+    if (m) out.push({ role: m[1] === "you" ? "user" : "assistant", content: m[2] });
+  }
+  return out;
+}
+
 /** Dead-simple keyword recall over session logs. Inspectable beats clever. */
 export function searchMemory(query: string): { id: string; line: string }[] {
   const q = query.toLowerCase();

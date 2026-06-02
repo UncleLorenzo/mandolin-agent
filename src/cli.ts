@@ -152,7 +152,7 @@ function help(): void {
     ["init", "establish your Signature + local home"],
     ["demo", "watch the loop turn — offline, 20 seconds"],
     ["act <task>", "put it to work with tools, through the gate"],
-    ["chat [msg]", "talk to it — operates from your Signature"],
+    ["chat [msg]", "talk to it — streams live; --continue resumes last session"],
     ["signature", "read the compounding model of you"],
     ["recall <query>", "ask your memory — ranked by meaning, not grep"],
     ["skills", "trusted instincts + what's proposed"],

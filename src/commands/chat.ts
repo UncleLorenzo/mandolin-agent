@@ -5,7 +5,7 @@ import { createInterface } from "node:readline";
 import { wordmark, rule, frame, tone, dim, mark, eyebrow, palette, paint, gradient } from "../brand.ts";
 import { ensureHome, isInitialized } from "../home.ts";
 import { scaffoldSignature, readSignature } from "../core/signature.ts";
-import { newSessionId, openSession, record } from "../core/memory.ts";
+import { newSessionId, openSession, record, listSessions, loadSessionHistory } from "../core/memory.ts";
 import { isLive, getConfig, setConfig } from "../core/provider.ts";
 import { respondStream } from "../core/agent.ts";
 import { reflect } from "../core/reflect.ts";
@@ -35,13 +35,27 @@ export async function chat(args: string[]): Promise<void> {
     return;
   }
 
+  const wantContinue = args.includes("--continue") || args.includes("-c");
+  const rest = args.filter((a) => a !== "--continue" && a !== "-c");
+
   const id = newSessionId();
   openSession(id, "Session");
   const history: Message[] = [];
 
+  // Resume: rehydrate the most recent prior session into context.
+  let resumedFrom: string | undefined;
+  if (wantContinue) {
+    const prev = latestPriorSession(id);
+    if (prev) {
+      const prior = loadSessionHistory(prev);
+      history.push(...prior);
+      resumedFrom = prev;
+    }
+  }
+
   // One-shot: `mando chat "do the thing"`
-  if (args.length) {
-    const text = args.join(" ");
+  if (rest.length) {
+    const text = rest.join(" ");
     record(id, { role: "you", text });
     history.push({ role: "user", content: text });
     process.stdout.write(`\n   ${tone.teal("mandolin")}  `);
@@ -53,9 +67,13 @@ export async function chat(args: string[]): Promise<void> {
   }
 
   // Interactive REPL.
+  const resumeLine = resumedFrom
+    ? `\n   ${mark.ok} ${dim(tone.ash(`resumed from ${resumedFrom} · ${history.length} message(s) of context`))}`
+    : "";
   process.stdout.write(
     `\n   ${wordmark()} ${dim(tone.ash("· live"))}\n   ${rule(46)}\n` +
-    `   ${eyebrow("operating from your Signature · /help for commands · /quit to end")}\n\n`
+    `   ${eyebrow("operating from your Signature · /help for commands · /quit to end")}` +
+    resumeLine + `\n\n`
   );
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   rl.setPrompt(`   ${tone.ash("you")}  `);
@@ -115,6 +133,15 @@ export async function chat(args: string[]): Promise<void> {
   }
   rl.close();
   await closeOut(id);
+}
+
+/** The most recent session that isn't the one we just opened (for --continue). */
+function latestPriorSession(currentId: string): string | undefined {
+  for (const f of listSessions()) {
+    const sid = f.replace(/\.md$/, "");
+    if (sid !== currentId) return sid;
+  }
+  return undefined;
 }
 
 /** End of session: reflect, and surface anything proposed. */
